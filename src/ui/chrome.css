@@ -1,0 +1,780 @@
+/*
+ * Cromo común a todas las páginas, para que la línea, los proyectos y el CV sean hojas del mismo juego:
+ * barra de las páginas de lectura, pie con la línea, hoja del cambio de página y láminas montadas.
+ * Tokens: globals.css. La barra y el raíl reutilizan las piezas de la portada (overlay.css).
+ */
+
+/* ---------- Barra de las páginas de lectura ---------- */
+
+/*
+ * La barra de la portada, pegada arriba en lugar de fija. Va bajo el marco de la lámina (z 20): al
+ * recogerse se mete bajo su borde superior. Columnas: marca, miga (lo que sobra) y celdas al final.
+ */
+.bar--sheet {
+  position: sticky;
+  z-index: 19;
+  top: calc(var(--gutter) + 1px);
+  left: auto;
+  right: auto;
+  margin: calc(var(--gutter) + 1px) calc(var(--gutter) + 1px) 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: auto;
+  transition: transform 0.5s var(--ease-out);
+}
+
+.bar--sheet[data-hidden='1'] {
+  transform: translateY(calc(-100% - var(--gutter) - 2px));
+  transition-duration: 0.4s;
+}
+
+.bar--sheet .tabs {
+  padding-right: 4px;
+}
+
+/* La pestaña de esta página no lleva a ningún sitio nuevo, pero se puede volver a ella. */
+.bar--sheet .tab {
+  text-decoration: none;
+}
+
+/* Volver a la línea: la celda del menú en la portada (la tinta sube al pasar el cursor). */
+.bar__back,
+.bar__act {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 0 22px;
+  border-left: 1px solid var(--rule);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  color: var(--ink);
+  cursor: pointer;
+  transition: color 0.35s var(--ease-out);
+}
+
+.bar__back::before,
+.bar__act::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ink);
+  transform: translateY(101%);
+  transition: transform 0.45s var(--ease-out);
+}
+
+.bar__act::before {
+  background: var(--wash);
+}
+
+.bar__back:hover {
+  color: var(--paper);
+}
+
+.bar__back:hover::before,
+.bar__act:hover::before {
+  transform: none;
+}
+
+.bar__back:focus-visible,
+.bar__act:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -7px;
+}
+
+.bar__back svg,
+.bar__act svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  transition: transform 0.45s var(--ease-out);
+}
+
+.bar__back:hover svg,
+.bar__back:focus-visible svg {
+  transform: translateX(-3px);
+}
+
+.bar__act:hover svg,
+.bar__act:focus-visible svg {
+  transform: translateY(2px);
+}
+
+@media (max-width: 1100px) {
+  .bar--sheet .tabs {
+    display: none;
+  }
+}
+
+@media (max-width: 720px) {
+  .bar--sheet .bar__brand {
+    padding: 0 14px;
+  }
+  .bar--sheet .crumbs {
+    padding: 0 12px;
+    border-left: 1px solid var(--rule);
+  }
+  .bar--sheet .crumbs__root,
+  .bar--sheet .crumbs__sep {
+    display: none;
+  }
+  .bar__back,
+  .bar__act {
+    padding: 0 15px;
+  }
+  .bar__back-label,
+  .bar__act-label {
+    display: none;
+  }
+}
+
+/* ---------- Pie de las páginas de lectura: la línea ---------- */
+
+.lidx {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: clamp(48px, 7vw, 88px) clamp(16px, 4vw, 56px) calc(var(--gutter) + 28px);
+  box-sizing: content-box;
+  font: 500 var(--fs-1)/1 var(--font);
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* Estación siguiente: su lámina a un lado y el título al otro. Al pasar, la lámina se acerca. */
+.lidx__next {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  min-height: clamp(260px, 30vw, 380px);
+  margin-bottom: clamp(36px, 5vw, 56px);
+  border: 1px solid var(--ink);
+  color: inherit;
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.lidx__next-text {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 14px;
+  padding: clamp(20px, 3vw, 34px);
+}
+
+/* Lavado de tinta que entra desde la izquierda al pasar el cursor. */
+.lidx__next-text::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--wash);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.6s var(--ease-out);
+}
+
+.lidx__next-text em {
+  font-style: normal;
+  color: var(--ink-3);
+  letter-spacing: var(--track-label);
+}
+
+.lidx__next-text b {
+  font: 600 clamp(var(--fs-6), 4.4vw, var(--fs-8)) / 0.98 var(--display);
+  letter-spacing: -0.03em;
+  text-transform: none;
+}
+
+.lidx__next-text > span {
+  color: var(--ink-2);
+}
+
+.lidx__next-go {
+  position: absolute;
+  top: clamp(18px, 2.6vw, 30px);
+  right: clamp(18px, 2.6vw, 30px);
+  font: 400 var(--fs-6)/1 var(--display);
+  font-style: normal;
+  transition: transform 0.5s var(--ease-out);
+}
+
+.lidx__plate {
+  position: relative;
+  overflow: hidden;
+  border-left: 1px solid var(--ink);
+  background: var(--paper-shade);
+}
+
+.lidx__plate img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.2s var(--ease-out);
+}
+
+.lidx__next:hover .lidx__next-text::before,
+.lidx__next:focus-visible .lidx__next-text::before {
+  transform: none;
+}
+
+.lidx__next:hover .lidx__plate img,
+.lidx__next:focus-visible .lidx__plate img {
+  transform: scale(1.045);
+}
+
+.lidx__next:hover .lidx__next-go,
+.lidx__next:focus-visible .lidx__next-go {
+  transform: translateX(6px);
+}
+
+.lidx__next:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* El raíl de la portada, quieto: avance hasta esta estación y cada nodo lleva a su hoja. */
+.lidx__line {
+  display: grid;
+  grid-template-columns: minmax(170px, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding: 18px 0;
+  border-top: 1px solid var(--ink);
+}
+
+.lidx__label {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.lidx__label span {
+  font-weight: 600;
+  letter-spacing: var(--track-wide);
+}
+
+.lidx__label em {
+  font-style: normal;
+  color: var(--ink-3);
+  letter-spacing: var(--track);
+}
+
+.lidx .rail__line {
+  padding: 0;
+}
+
+.lidx .node {
+  text-decoration: none;
+  color: inherit;
+}
+
+.lidx .node:not(.is-active):hover .node__glyph::before,
+.lidx .node:focus-visible .node__glyph::before {
+  opacity: 0.5;
+  transform: none;
+}
+
+.lidx .rail__fill {
+  will-change: auto;
+}
+
+/* Cajetín de la hoja. */
+.lidx__block {
+  display: grid;
+  grid-template-columns: 1.1fr 1.5fr 1fr 0.9fr;
+  margin: 0;
+  border: 1px solid var(--ink);
+  color: var(--ink-2);
+}
+
+.lidx__block span {
+  padding: 9px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lidx__block span + span {
+  border-left: 1px solid var(--ink);
+}
+
+.lidx__block span:first-child {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+@media (max-width: 760px) {
+  .lidx__next {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+  }
+  .lidx__plate {
+    order: -1;
+    aspect-ratio: 4 / 3;
+    border-left: 0;
+    border-bottom: 1px solid var(--ink);
+  }
+  .lidx__line {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  /* El lema no cabe: el cajetín se queda con nombre, revisión y hoja. */
+  .lidx__block {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+  .lidx__block span:nth-child(2) {
+    display: none;
+  }
+}
+
+/* ---------- Cambio de página: la hoja que cubre y se levanta ---------- */
+
+/*
+ * Crece desde el control pulsado (--t --r --b --l: su caja) hasta cubrir la pantalla con el rótulo
+ * de la hoja nueva; al llegar, se levanta hacia arriba y descubre la página. Mientras cubre, no deja
+ * pulsar nada debajo.
+ */
+.warp {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  clip-path: inset(var(--t, 100%) var(--r, 0px) var(--b, 0px) var(--l, 0px));
+  transition: clip-path 0.56s var(--ease-sheet);
+}
+
+.warp.is-full {
+  clip-path: inset(0 0 0 0);
+}
+
+.warp.is-full.is-leaving {
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path 0.64s var(--ease-sheet);
+  pointer-events: none;
+}
+
+.warp__label {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.3s 0.16s,
+    transform 0.6s var(--ease-out) 0.16s;
+}
+
+.warp.is-full .warp__label {
+  opacity: 1;
+  transform: none;
+}
+
+.warp.is-leaving .warp__label,
+.warp.is-leaving .warp__cross {
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+
+.warp__kicker {
+  font: 500 var(--fs-1)/1 var(--font);
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.warp__title {
+  font: 600 clamp(var(--fs-6), 4.2vw, var(--fs-7)) / 1 var(--display);
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+
+/* Avance indeterminado: si la página tarda, se ve que algo llega. */
+.warp__bar {
+  position: relative;
+  width: 132px;
+  height: 1px;
+  margin-top: 4px;
+  overflow: hidden;
+  background: var(--rule);
+}
+
+.warp__bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: var(--ink);
+  animation: warp-run 1.1s var(--ease-io) infinite;
+}
+
+@keyframes warp-run {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+/* Cruces de registro de la hoja nueva, en sus esquinas. */
+.warp__cross {
+  position: absolute;
+  width: 13px;
+  height: 13px;
+  opacity: 0;
+  transition: opacity 0.3s 0.2s;
+}
+
+.warp.is-full .warp__cross {
+  opacity: 0.55;
+}
+
+.warp__cross::before,
+.warp__cross::after {
+  content: '';
+  position: absolute;
+  background: var(--ink);
+}
+
+.warp__cross::before {
+  left: 0;
+  right: 0;
+  top: 6px;
+  height: 1px;
+}
+
+.warp__cross::after {
+  top: 0;
+  bottom: 0;
+  left: 6px;
+  width: 1px;
+}
+
+.warp__cross--tl {
+  top: calc(var(--gutter) + 14px);
+  left: calc(var(--gutter) + 14px);
+}
+
+.warp__cross--tr {
+  top: calc(var(--gutter) + 14px);
+  right: calc(var(--gutter) + 14px);
+}
+
+.warp__cross--bl {
+  bottom: calc(var(--gutter) + 14px);
+  left: calc(var(--gutter) + 14px);
+}
+
+.warp__cross--br {
+  bottom: calc(var(--gutter) + 14px);
+  right: calc(var(--gutter) + 14px);
+}
+
+/* ---------- Lámina montada (la máquina sobre su passe-partout) ---------- */
+
+.mount {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper-shade);
+}
+
+.mount__view {
+  position: relative;
+  overflow: hidden;
+}
+
+.mount img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.mount__cross {
+  position: absolute;
+  z-index: 1;
+  width: 13px;
+  height: 13px;
+}
+
+.mount__cross::before,
+.mount__cross::after {
+  content: '';
+  position: absolute;
+  background: var(--ink);
+  opacity: 0.6;
+}
+
+.mount__cross::before {
+  left: 0;
+  right: 0;
+  top: 6px;
+  height: 1px;
+}
+
+.mount__cross::after {
+  top: 0;
+  bottom: 0;
+  left: 6px;
+  width: 1px;
+}
+
+.mount__cross--tl {
+  top: 10px;
+  left: 10px;
+}
+
+.mount__cross--tr {
+  top: 10px;
+  right: 10px;
+}
+
+.mount__cross--bl {
+  bottom: 10px;
+  left: 10px;
+}
+
+.mount__cross--br {
+  bottom: 10px;
+  right: 10px;
+}
+
+/* Sello de goma sobre la lámina (hoja en preparación): tinta, doble filete y algo torcido. */
+.stamp {
+  display: inline-grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 11px 16px 10px;
+  border: 2px solid var(--ink);
+  box-shadow:
+    inset 0 0 0 3px var(--paper-lit),
+    inset 0 0 0 4px var(--ink);
+  background: color-mix(in srgb, var(--paper-lit) 88%, transparent);
+  font: 600 var(--fs-2)/1 var(--font);
+  letter-spacing: var(--track-wide);
+  text-transform: uppercase;
+  color: var(--ink);
+  transform: rotate(-4deg);
+}
+
+.stamp small {
+  font-size: var(--fs-1);
+  font-weight: 500;
+  letter-spacing: var(--track);
+  color: var(--ink-2);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .stamp {
+    animation: stamp-in 0.55s var(--ease-out) 0.5s both;
+  }
+}
+
+@keyframes stamp-in {
+  from {
+    opacity: 0;
+    transform: rotate(-9deg) scale(1.4);
+  }
+  60% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .warp {
+    transition-duration: 0s !important;
+  }
+  .warp__bar::after {
+    animation: none;
+  }
+}
+
+@media print {
+  .sheet,
+  .bar--sheet,
+  .lidx,
+  .warp {
+    display: none !important;
+  }
+}
+
+/* ---------- 404 ---------- */
+
+.lost {
+  display: grid;
+  justify-items: start;
+  gap: 22px;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: clamp(56px, 14vh, 160px) clamp(16px, 4vw, 56px) 0;
+  box-sizing: content-box;
+  color: var(--ink);
+}
+
+.lost__kicker {
+  margin: 0;
+  font: 500 var(--fs-1)/1 var(--font);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.lost__title {
+  margin: 0;
+  font: 600 var(--fs-hero) / 0.88 var(--display);
+  letter-spacing: -0.045em;
+}
+
+.lost__lead {
+  max-width: 46ch;
+  margin: 0 0 8px;
+  font: 400 clamp(var(--fs-4), 1.6vw, var(--fs-5)) / 1.5 var(--display);
+  color: var(--ink-2);
+}
+
+/* ---------- La línea en láminas (sin WebGL) ---------- */
+
+/*
+ * Lo que ve quien no puede dibujar la nave: la portada se desplaza como una hoja de lectura, con la
+ * barra fija de la línea arriba, una lámina por estación (la de «estación siguiente» de los proyectos)
+ * y el contacto al final.
+ */
+html.flat .track {
+  display: none;
+}
+
+.flat {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: calc(var(--gutter) + var(--bar-h) + clamp(40px, 7vw, 112px)) clamp(16px, 4vw, 56px) 0;
+  box-sizing: content-box;
+  font: 500 var(--fs-1)/1 var(--font);
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.flat__head {
+  display: grid;
+  justify-items: start;
+  gap: 22px;
+  padding-bottom: clamp(48px, 7vw, 88px);
+}
+
+.flat__kicker {
+  margin: 0;
+  letter-spacing: var(--track-label);
+  color: var(--ink-3);
+}
+
+.flat__title {
+  margin: 0;
+  font: 600 var(--fs-hero) / 0.88 var(--display);
+  letter-spacing: -0.045em;
+  text-transform: none;
+}
+
+.flat__lead {
+  max-width: 52ch;
+  margin: 0;
+  font: 400 clamp(var(--fs-4), 1.6vw, var(--fs-5)) / 1.5 var(--display);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-2);
+}
+
+.flat__note {
+  max-width: 64ch;
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+  line-height: 1.7;
+  color: var(--ink-3);
+}
+
+.flat__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Al llegar a una lámina (desde la barra o un enlace), queda bajo la barra y no debajo de ella. */
+.flat__stop {
+  scroll-margin-top: calc(var(--gutter) + var(--bar-h) + 24px);
+}
+
+.flat__name {
+  margin: 0;
+  font: 600 clamp(var(--fs-6), 4.4vw, var(--fs-8)) / 0.98 var(--display);
+  letter-spacing: -0.03em;
+  text-transform: none;
+}
+
+.lidx__next-text .flat__desc {
+  max-width: 46ch;
+  font: 400 var(--fs-3)/1.55 var(--display);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.flat__mail {
+  align-self: flex-start;
+  padding-bottom: 3px;
+  font: 500 clamp(var(--fs-3), 1.4vw, var(--fs-4)) / 1.2 var(--font);
+  letter-spacing: 0;
+  text-transform: none;
+  color: inherit;
+  text-decoration: none;
+  background: linear-gradient(var(--ink), var(--ink)) 0 100% / 0 1px no-repeat;
+  transition: background-size 0.5s var(--ease-out);
+}
+
+.flat__mail:hover,
+.flat__mail:focus-visible {
+  background-size: 100% 1px;
+}
+
+.flat__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* La lámina del contacto no es un enlace: no reacciona al cursor como las de las estaciones. */
+.flat__exit:hover .lidx__next-text::before {
+  transform: scaleX(0);
+}
+
+.flat__exit:hover .lidx__plate img {
+  transform: none;
+}
+
+.flat > .lidx {
+  max-width: none;
+  padding: 0 0 calc(var(--gutter) + 28px);
+}
+
+/* Error: las acciones de la hoja, en fila. */
+.lost__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

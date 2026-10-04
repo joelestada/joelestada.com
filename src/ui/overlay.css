@@ -1,0 +1,2718 @@
+/*
+ * Capa HTML: lámina técnica sobre la escena.
+ * Colores: solo tokens de la paleta (layout.tsx) y mezclas de ellos. Tokens comunes: globals.css.
+ * Movimiento: dos curvas (--ease-out para entradas, --ease-io para recorridos) y duraciones de 0,3–0,7 s.
+ */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Pilotos ---------- */
+
+.led {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--metal);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 30%, transparent);
+  transition:
+    background-color 0.3s,
+    box-shadow 0.3s;
+}
+
+.led--ok {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 20%, transparent);
+}
+
+/*
+ * Latido del piloto: un halo que se abre de 3 a 6 px mientras se apaga y vuelve. Va en un
+ * pseudoelemento con escala y opacidad (lo anima el compositor); animar la sombra repintaba la
+ * ficha entera en cada frame.
+ */
+.led--pulse {
+  position: relative;
+  box-shadow: none;
+}
+
+/* Halo por debajo y el piloto otra vez por encima (el halo es un disco). */
+.led--pulse::before,
+.led--pulse::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+}
+
+.led--pulse::before {
+  inset: -3px;
+  background: color-mix(in srgb, var(--ok) 20%, transparent);
+  animation: led-pulse 2.4s var(--ease-io) infinite;
+}
+
+.led--pulse::after {
+  inset: 0;
+  background: var(--ok);
+}
+
+@keyframes led-pulse {
+  50% {
+    opacity: 0;
+    transform: scale(1.4615);
+  }
+}
+
+/* ---------- Marco de lámina ---------- */
+
+/*
+ * Fuera del marco, papel (la escena queda encuadrada como en un plano) y un filete en su borde.
+ * Son cuatro bandas en los bordes de la pantalla: una sombra de 100vmax hacía una capa de casi
+ * 9000 px de lado que el navegador componía en cada frame.
+ */
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.sheet__edge {
+  position: absolute;
+  background: var(--paper);
+}
+
+/* Filete opaco: si fuera translúcido asomaría la escena por él. */
+.sheet__edge::after {
+  content: '';
+  position: absolute;
+  background: color-mix(in srgb, var(--ink) 22%, var(--paper));
+}
+
+.sheet__edge--t,
+.sheet__edge--b {
+  left: 0;
+  right: 0;
+  height: calc(var(--gutter) + 1px);
+}
+
+.sheet__edge--t {
+  top: 0;
+}
+
+.sheet__edge--b {
+  bottom: 0;
+}
+
+.sheet__edge--t::after,
+.sheet__edge--b::after {
+  left: var(--gutter);
+  right: var(--gutter);
+  height: 1px;
+}
+
+.sheet__edge--t::after {
+  bottom: 0;
+}
+
+.sheet__edge--b::after {
+  top: 0;
+}
+
+.sheet__edge--l,
+.sheet__edge--r {
+  top: calc(var(--gutter) + 1px);
+  bottom: calc(var(--gutter) + 1px);
+  width: calc(var(--gutter) + 1px);
+}
+
+.sheet__edge--l {
+  left: 0;
+}
+
+.sheet__edge--r {
+  right: 0;
+}
+
+.sheet__edge--l::after,
+.sheet__edge--r::after {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.sheet__edge--l::after {
+  right: 0;
+}
+
+.sheet__edge--r::after {
+  left: 0;
+}
+
+.sheet__cross {
+  position: absolute;
+  top: 50%;
+  width: 11px;
+  height: 11px;
+  opacity: 0.5;
+}
+
+.sheet__cross::before,
+.sheet__cross::after {
+  content: '';
+  position: absolute;
+  background: var(--ink);
+}
+
+.sheet__cross::before {
+  left: 0;
+  right: 0;
+  top: 5px;
+  height: 1px;
+}
+
+.sheet__cross::after {
+  top: 0;
+  bottom: 0;
+  left: 5px;
+  width: 1px;
+}
+
+.sheet__cross--l {
+  left: calc(var(--gutter) + 13px);
+}
+
+.sheet__cross--r {
+  right: calc(var(--gutter) + 13px);
+}
+
+/* ---------- Despiece: líneas de montaje y globos de pieza ---------- */
+
+.xplode {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 13;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.xp__path {
+  stroke: var(--ink);
+  stroke-width: 0.9;
+  stroke-opacity: 0.55;
+  stroke-dasharray: 7 3 1.5 3;
+  fill: none;
+}
+
+.xp__leader {
+  stroke: var(--ink);
+  stroke-width: 0.8;
+  stroke-opacity: 0.7;
+}
+
+.xp__dot {
+  fill: var(--ink);
+}
+
+.xp__tag circle {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1;
+  transition: fill 0.25s;
+}
+
+.xp__tag text {
+  font: 600 var(--fs-1)/1 var(--font);
+  fill: var(--ink);
+  text-anchor: middle;
+  transition: fill 0.25s;
+}
+
+.xp.is-hot .xp__tag circle {
+  fill: var(--ink);
+}
+
+.xp.is-hot .xp__tag text {
+  fill: var(--paper);
+}
+
+/* ---------- Globos de estación y línea de referencia ---------- */
+
+.balloons {
+  position: fixed;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.balloon {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0.7;
+  will-change: transform;
+  transition: opacity 0.45s var(--ease-out);
+}
+
+.balloon__dot {
+  position: absolute;
+  left: -2.5px;
+  top: -2.5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.balloon__stem {
+  position: absolute;
+  left: -0.5px;
+  top: -22px;
+  width: 1px;
+  height: 22px;
+  background: var(--ink);
+}
+
+.balloon__circle {
+  all: unset;
+  box-sizing: border-box;
+  position: absolute;
+  left: -12px;
+  top: -46px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--ink);
+  background: var(--paper);
+  display: grid;
+  place-items: center;
+  font: 600 var(--fs-1)/1 var(--font);
+  color: var(--ink);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    background-color 0.35s,
+    color 0.35s,
+    transform 0.45s var(--ease-out),
+    box-shadow 0.45s var(--ease-out);
+}
+
+/* Globo de la salida: una flecha hacia la puerta en lugar de un número. */
+.balloon--exit .balloon__circle svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+}
+
+.balloon.is-target,
+.balloon.is-on {
+  opacity: 1;
+}
+
+/* Pulsador de hombre muerto: anillo que se llena alrededor del globo y aviso al pasar el cursor. */
+.balloon__ring {
+  position: absolute;
+  left: -17px;
+  top: -51px;
+  width: 34px;
+  height: 34px;
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transform: rotate(-90deg);
+  transition: opacity 0.3s;
+}
+
+.balloon__ring circle {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+.balloon.is-forced .balloon__ring {
+  opacity: 1;
+}
+
+/* Máquina despiezada: sus piezas llevan sus propios globos. */
+.balloon.is-away {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.balloon.is-away .balloon__circle {
+  pointer-events: none;
+}
+
+.balloon.is-target .balloon__circle {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.balloon.is-on .balloon__circle,
+.balloon__circle:hover,
+.balloon__circle:focus-visible {
+  background: var(--ink);
+  color: var(--paper);
+  transform: scale(1.12);
+  outline: none;
+}
+
+.balloon.is-selected .balloon__circle {
+  box-shadow:
+    0 0 0 3px var(--paper),
+    0 0 0 4px var(--ink);
+}
+
+/*
+ * Línea de referencia: un filete de 1 px girado y estirado con `transform` (y un punto en la
+ * esquina de la ficha). Sigue a la escena en cada frame sin repintar nada: antes era un SVG a
+ * pantalla completa que se repintaba entero en cada frame de scroll.
+ */
+.leader {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 11;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+
+.leader__line {
+  position: absolute;
+  left: 0;
+  top: -0.5px;
+  width: 1px;
+  height: 1px;
+  transform-origin: 0 50%;
+  will-change: transform;
+}
+
+.leader__stroke {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--ink) 50%, transparent);
+  transform-origin: 0 50%;
+}
+
+.leader__dot {
+  position: absolute;
+  left: -2.5px;
+  top: -2.5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink);
+  will-change: transform;
+}
+
+/* ---------- Barra superior: marca | dónde estás | apartados | menú ---------- */
+
+.bar {
+  position: fixed;
+  z-index: 40;
+  top: calc(var(--gutter) + 1px);
+  left: calc(var(--gutter) + 1px);
+  right: calc(var(--gutter) + 1px);
+  height: var(--bar-h);
+  display: grid;
+  /* Marca | miga | apartados | idioma | menú. */
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  font: 500 var(--fs-1)/1 var(--font);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.bar__brand {
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  border-right: 1px solid var(--rule);
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+}
+
+.bar__name {
+  /* Al pasar por la marca se acota (globals.css): de la primera letra a la última, sin el espaciado
+     que deja la última. */
+  --cota-x: 0px;
+  --cota-r: var(--track-wide);
+  --cota-y: -3px;
+  position: relative;
+  isolation: isolate;
+  font-weight: 600;
+  font-size: var(--fs-2);
+  letter-spacing: var(--track-wide);
+  padding: 3px 0;
+}
+
+/*
+ * Dónde estás: la línea y lo que se mira (la estación, el final o el apartado del panel). La misma
+ * miga que llevan las páginas de proyecto y el CV: la línea es la portada y todo cuelga de ella.
+ */
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0 22px;
+  font-size: var(--fs-1);
+  letter-spacing: var(--track);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.crumbs ol {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crumbs__sep {
+  flex: none;
+  color: var(--ink-3);
+}
+
+.crumbs a {
+  flex: none;
+  color: inherit;
+  text-decoration: none;
+  padding: 3px 0;
+  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
+  transition:
+    color 0.3s,
+    background-size 0.45s var(--ease-out);
+}
+
+.crumbs a:hover,
+.crumbs a:focus-visible {
+  color: var(--ink);
+  background-size: 100% 1px;
+  outline: none;
+}
+
+.crumbs__here {
+  min-width: 0;
+  overflow: hidden;
+  /* Como en sus hijos: el recorte deja asomar las tildes de las mayúsculas (ROBÓTICO). */
+  padding-block: 0.25em;
+  margin-block: -0.25em;
+  color: var(--ink);
+}
+
+.crumbs__here > * {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: bottom;
+}
+
+.crumbs__here > .swap {
+  display: inline-grid;
+}
+
+.crumbs__here .swap__item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* El recorte de los puntos suspensivos no se come las tildes de las mayúsculas. */
+  padding-block: 0.25em;
+  margin-block: -0.25em;
+}
+
+.crumbs__here em {
+  font-style: normal;
+  font-weight: 600;
+  margin-right: 8px;
+}
+
+.tabs {
+  position: relative;
+  justify-self: end;
+  display: flex;
+  height: 100%;
+  padding-right: 8px;
+}
+
+.tab {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 16px;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.tab__inner {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.tab.is-marked,
+.tab.is-active,
+.tab:focus-visible {
+  color: var(--ink);
+  outline: none;
+}
+
+/*
+ * Marcas de selección de plano: cuatro esquinas que encuadran el rótulo (el ancho y la posición son
+ * los del rótulo; el encuadre sale 10 px a cada lado y es más alto que él).
+ * - Al entrar, las esquinas convergen desde fuera sobre el rótulo mientras se encienden.
+ * - Entre pestañas, el encuadre se desliza y cambia de ancho (las esquinas no se deforman).
+ * - Al salir, se abren hacia fuera y se apagan.
+ */
+.tabs__mark {
+  --arm: 6px;
+  --spread: 7px;
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 30px;
+  margin: -15px 0 0 -10px;
+  padding: 0 10px;
+  box-sizing: content-box;
+  pointer-events: none;
+  transition:
+    transform 0.5s var(--ease-out),
+    width 0.5s var(--ease-out);
+}
+
+/* Al aparecer se coloca directamente en su pestaña: solo convergen las esquinas. */
+.tabs__mark.is-jump {
+  transition: none;
+}
+
+.tabs__mark i {
+  position: absolute;
+  width: var(--arm);
+  height: var(--arm);
+  border: 0 solid var(--ink);
+  opacity: 0;
+  transition:
+    transform 0.45s var(--ease-out),
+    opacity 0.25s;
+}
+
+.tabs__mark i:nth-child(1) {
+  top: 0;
+  left: 0;
+  border-width: 1px 0 0 1px;
+  transform: translate(calc(var(--spread) * -1), calc(var(--spread) * -1));
+}
+
+.tabs__mark i:nth-child(2) {
+  top: 0;
+  right: 0;
+  border-width: 1px 1px 0 0;
+  transform: translate(var(--spread), calc(var(--spread) * -1));
+}
+
+.tabs__mark i:nth-child(3) {
+  bottom: 0;
+  left: 0;
+  border-width: 0 0 1px 1px;
+  transform: translate(calc(var(--spread) * -1), var(--spread));
+}
+
+.tabs__mark i:nth-child(4) {
+  bottom: 0;
+  right: 0;
+  border-width: 0 1px 1px 0;
+  transform: translate(var(--spread), var(--spread));
+}
+
+.tabs__mark.is-shown i {
+  opacity: 1;
+  transform: none;
+}
+
+.menu-btn {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 0 22px;
+  border-left: 1px solid var(--rule);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--ink);
+  cursor: pointer;
+  transition: color 0.35s var(--ease-out);
+}
+
+.menu-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ink);
+  transform: translateY(101%);
+  transition: transform 0.45s var(--ease-out);
+}
+
+.menu-btn:hover,
+.menu-btn.is-open {
+  color: var(--paper);
+}
+
+.menu-btn:hover::before,
+.menu-btn.is-open::before {
+  transform: none;
+}
+
+/*
+ * Foco de teclado: un filete dentro de la celda, no la tinta del estado abierto. Al cerrar el panel
+ * con Esc el foco vuelve aquí, y el botón no debe parecer abierto.
+ */
+.menu-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -7px;
+}
+
+/* Tres lamas: se recogen al pasar y se cruzan al abrir. */
+.menu-btn__icon {
+  position: relative;
+  width: 16px;
+  height: 10px;
+}
+
+.menu-btn__icon i {
+  position: absolute;
+  left: 0;
+  width: 16px;
+  height: 1.5px;
+  background: currentColor;
+  transition:
+    transform 0.45s var(--ease-out),
+    top 0.45s var(--ease-out),
+    opacity 0.25s;
+}
+
+.menu-btn__icon i:nth-child(1) {
+  top: 0;
+}
+
+.menu-btn__icon i:nth-child(2) {
+  top: 4.25px;
+}
+
+.menu-btn__icon i:nth-child(3) {
+  top: 8.5px;
+}
+
+.menu-btn:hover:not(.is-open) .menu-btn__icon i:nth-child(1) {
+  transform: translateX(4px) scaleX(0.5);
+}
+
+.menu-btn:hover:not(.is-open) .menu-btn__icon i:nth-child(3) {
+  transform: translateX(-2px) scaleX(0.75);
+  transition-delay: 0.05s;
+}
+
+.menu-btn.is-open .menu-btn__icon i:nth-child(1) {
+  top: 4.25px;
+  transform: rotate(45deg);
+}
+
+.menu-btn.is-open .menu-btn__icon i:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+
+.menu-btn.is-open .menu-btn__icon i:nth-child(3) {
+  top: 4.25px;
+  transform: rotate(-45deg);
+}
+
+.menu-btn__label {
+  display: inline-grid;
+  height: 1em;
+  overflow: hidden;
+}
+
+.menu-btn__label span {
+  grid-area: 1 / 1;
+  transition: transform 0.45s var(--ease-out);
+}
+
+.menu-btn__label span:last-child {
+  transform: translateY(115%);
+}
+
+.menu-btn.is-open .menu-btn__label span:first-child {
+  transform: translateY(-115%);
+}
+
+.menu-btn.is-open .menu-btn__label span:last-child {
+  transform: none;
+}
+
+/* ---------- Panel desplegable ---------- */
+
+@property --unroll {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+/* Cerrado, además de transparente queda oculto: no ocupa una capa a pantalla completa. */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: color-mix(in srgb, var(--ink) 20%, transparent);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.45s var(--ease-out),
+    visibility 0s linear 0.45s;
+}
+
+.scrim.is-on {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.45s var(--ease-out);
+}
+
+.drawer {
+  --unroll: 0;
+  position: fixed;
+  z-index: 35;
+  top: calc(var(--gutter) + var(--bar-h) + 1px);
+  left: calc(var(--gutter) + 1px);
+  right: calc(var(--gutter) + 1px);
+  visibility: hidden;
+  font: 500 var(--fs-1)/1.3 var(--font);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+  transition:
+    --unroll 0.46s var(--ease-io),
+    visibility 0s linear 0.46s;
+}
+
+/* Baja con un pequeño rebote al tocar fondo (la curva pasa de 1). */
+.drawer[data-state='open'] {
+  --unroll: 1;
+  visibility: visible;
+  transition:
+    --unroll 0.64s cubic-bezier(0.3, 1.12, 0.42, 1),
+    visibility 0s;
+}
+
+.drawer__sheet {
+  max-height: calc(100dvh - var(--bar-h) - var(--gutter) * 2 - 24px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  clip-path: inset(0 0 calc((1 - var(--unroll)) * 100%) 0);
+  background: var(--paper);
+  border-bottom: 1px solid var(--ink);
+  outline: none;
+}
+
+/* Lengüeta del borde que baja: también cierra. */
+.drawer__edge {
+  all: unset;
+  position: absolute;
+  left: 50%;
+  top: calc(var(--unroll) * 100%);
+  width: 120px;
+  height: 16px;
+  margin-left: -60px;
+  display: grid;
+  place-items: start center;
+  cursor: pointer;
+}
+
+.drawer__edge i {
+  width: 42px;
+  height: 5px;
+  border-radius: 0 0 4px 4px;
+  background: var(--ink);
+  transition:
+    width 0.45s var(--ease-out),
+    background-color 0.3s;
+}
+
+.drawer__edge:hover i,
+.drawer__edge:focus-visible i {
+  width: 72px;
+}
+
+.drawer__tabs {
+  display: none;
+}
+
+/* Atajos de teclado, al pie del panel (solo con teclado y ratón a mano). */
+.drawer__keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+  padding: 12px 34px 13px;
+  border-top: 1px solid var(--rule);
+  font-size: var(--fs-1);
+  letter-spacing: var(--track);
+  color: var(--ink-3);
+}
+
+.drawer__keys span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.drawer__keys kbd {
+  min-width: 18px;
+  height: 18px;
+  color: var(--ink-2);
+}
+
+@media (hover: none), (max-width: 900px) {
+  .drawer__keys {
+    display: none;
+  }
+}
+
+/* Contenedor de los apartados: sigue el alto del que está (medido) y pasa de uno a otro sin saltos. */
+.panels {
+  position: relative;
+  overflow: clip;
+  transition: height 0.5s var(--ease-io);
+}
+
+.panel {
+  display: grid;
+  grid-template-columns: minmax(250px, 28%) minmax(0, 1fr);
+  min-height: 360px;
+}
+
+.panel__side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 34px 34px 32px;
+  border-right: 1px solid var(--rule);
+}
+
+.panel__kicker {
+  display: block;
+  overflow: hidden;
+  font-size: var(--fs-1);
+  letter-spacing: 0.24em;
+  color: var(--ink-3);
+}
+
+/* La máscara baja un poco más que la línea: la j de «Projects» no se corta. */
+.panel__title {
+  margin: 0 0 -0.14em;
+  padding-bottom: 0.14em;
+  overflow: hidden;
+  font: 600 var(--fs-7)/1 var(--display);
+  letter-spacing: -0.025em;
+  text-transform: none;
+}
+
+/* Número y título ruedan en el sentido de la pestaña elegida (--pdir), como la ficha de la línea. */
+.panel__kicker > span,
+.panel__title > span {
+  display: block;
+  animation: panel-roll-in 0.7s var(--ease-swap) 60ms both;
+}
+
+.panel__title > span {
+  animation-delay: 110ms;
+}
+
+@keyframes panel-roll-in {
+  from {
+    transform: translateY(calc(var(--pdir, 1) * 105%));
+  }
+}
+
+.panel__lead {
+  margin-top: auto;
+  max-width: 29.5ch;
+  font-size: var(--fs-1);
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--ink-2);
+}
+
+.panel__main {
+  min-width: 0;
+  padding: 30px 38px 34px;
+}
+
+/*
+ * Vista previa del índice de proyectos: la lámina de la máquina bajo el cursor (o la que se mira en
+ * la línea). Al cambiar, la nueva entra fundida y acercándose un poco, como al enfocar.
+ */
+.peek {
+  display: grid;
+  gap: 10px;
+  margin: 4px 0 0;
+}
+
+.peek__view {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  background: var(--paper-shade);
+}
+
+.peek__view img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+  transform: scale(1.06);
+  transition:
+    opacity 0.45s var(--ease-out),
+    transform 0.9s var(--ease-out);
+}
+
+.peek__view img.is-on {
+  opacity: 1;
+  transform: none;
+}
+
+.peek__cap {
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  font-size: var(--fs-1);
+  letter-spacing: var(--track);
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.peek__cap b {
+  flex: none;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.peek__cap > span {
+  min-width: 0;
+}
+
+.peek__cap > span > span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+[data-anim] {
+  animation: panel-in 0.6s var(--ease-out) both;
+  animation-delay: calc(90ms + var(--i, 0) * 45ms);
+}
+
+.panel[data-dir='-1'] [data-anim] {
+  animation-name: panel-in-back;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+
+@keyframes panel-in-back {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+
+/*
+ * Cambio de apartado con el panel abierto: el viejo, encima y sin ocupar sitio, se apaga mientras sus
+ * piezas se retiran hacia el lado contrario a la pestaña elegida (--exit) y su título rueda fuera; el
+ * nuevo entra un instante después, en cascada desde el lado de la pestaña.
+ */
+.panel.is-leaving {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  animation: panel-fade-out 0.34s linear both;
+}
+
+.panel.is-leaving [data-anim] {
+  animation: panel-item-out 0.34s var(--ease-io) both;
+}
+
+.panel.is-leaving .panel__kicker > span,
+.panel.is-leaving .panel__title > span {
+  animation: panel-roll-out 0.36s var(--ease-io) both;
+}
+
+@keyframes panel-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes panel-item-out {
+  to {
+    opacity: 0;
+    transform: translateX(calc(var(--exit, 1) * -18px));
+  }
+}
+
+@keyframes panel-roll-out {
+  to {
+    transform: translateY(calc(var(--exit, 1) * -105%));
+  }
+}
+
+.panel.is-entering [data-anim] {
+  animation-delay: calc(150ms + var(--i, 0) * 45ms);
+}
+
+.panel.is-entering .panel__kicker > span {
+  animation-delay: 120ms;
+}
+
+.panel.is-entering .panel__title > span {
+  animation-delay: 170ms;
+}
+
+/* Proyectos. */
+.plist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.plist li {
+  border-bottom: 1px solid var(--rule);
+}
+
+.plist__row {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto 40px 18px;
+  gap: 18px;
+  align-items: center;
+  width: 100%;
+  padding: 13px 12px;
+  cursor: pointer;
+}
+
+.plist__row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s var(--ease-out);
+}
+
+.plist__row:hover::before,
+.plist__row:focus-visible::before {
+  transform: scaleX(1);
+}
+
+.plist__num,
+.plist__name {
+  font-weight: 600;
+  font-size: var(--fs-1);
+  letter-spacing: 0.12em;
+}
+
+.plist__row.is-here .plist__num {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+
+.plist__sum {
+  display: block;
+  margin-top: 4px;
+  font-size: var(--fs-1);
+  line-height: 1.45;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--ink-2);
+}
+
+.plist__field {
+  font-size: var(--fs-1);
+  letter-spacing: 0.18em;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.plist__year {
+  font-size: var(--fs-1);
+  letter-spacing: var(--track);
+  color: var(--ink-3);
+  text-align: right;
+}
+
+.plist__go {
+  transition: transform 0.45s var(--ease-out);
+}
+
+.plist__row:hover .plist__go,
+.plist__row:focus-visible .plist__go {
+  transform: translateX(4px);
+}
+
+/* Perfil: texto corrido, en la sans de los textos largos (como en las hojas de proyecto y en móvil). */
+.about {
+  margin: 0;
+  max-width: 48ch;
+  font: 400 var(--fs-4)/1.6 var(--display);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-2);
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 48ch) minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+}
+
+/* Ficha de formación y herramientas: etiqueta en mono, dato en frase. */
+.bg {
+  margin: 0;
+  border-top: 1px solid var(--rule);
+}
+
+.bg div {
+  display: grid;
+  grid-template-columns: 11.5ch minmax(0, 1fr);
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.bg dt {
+  padding-top: 2px;
+  font-size: var(--fs-1);
+  letter-spacing: 0.16em;
+  color: var(--ink-3);
+}
+
+.bg dd {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0;
+  font-size: var(--fs-2);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.bg dd b {
+  font-weight: 600;
+}
+
+.bg dd span {
+  font-size: var(--fs-1);
+  color: var(--ink-2);
+}
+
+.disc {
+  list-style: none;
+  margin: 28px 0 0;
+  padding: 0;
+  max-width: 460px;
+  border-top: 1px solid var(--rule);
+}
+
+.disc li {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rule);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+}
+
+.disc em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.disc__name {
+  flex: 1;
+  /* Si no cabe (traducido es más largo), el nombre pasa a dos líneas; los chips no se mueven. */
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Las máquinas de cada disciplina: su número, y su nombre al pasar. Llevan a ella en la línea. */
+.disc__work {
+  display: flex;
+  gap: 4px;
+}
+
+.chip {
+  all: unset;
+  position: relative;
+  box-sizing: border-box;
+  display: inline-grid;
+  place-items: center;
+  min-width: 30px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--rule-strong);
+  font: 600 var(--fs-1)/1 var(--font);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    background-color 0.3s,
+    color 0.3s,
+    border-color 0.3s;
+}
+
+.chip:hover,
+.chip:focus-visible {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.chip__name {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  padding: 5px 7px;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 500;
+  letter-spacing: var(--track);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 0.25s,
+    transform 0.35s var(--ease-out);
+}
+
+.chip:hover .chip__name,
+.chip:focus-visible .chip__name {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* El último de la fila va pegado al borde del panel: su nombre crece hacia dentro, sin salirse. */
+.disc__work .chip:last-child .chip__name {
+  left: auto;
+  right: -1px;
+  transform: translateY(4px);
+}
+
+.disc__work .chip:last-child:hover .chip__name,
+.disc__work .chip:last-child:focus-visible .chip__name {
+  transform: none;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--fs-1);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+/* Contacto. */
+.mail {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 4px;
+  font: 500 clamp(var(--fs-5), 2.1vw, var(--fs-6)) / 1.2 var(--font);
+  letter-spacing: -0.01em;
+  text-transform: none;
+  color: inherit;
+  text-decoration: none;
+  background: linear-gradient(var(--ink), var(--ink)) 0 100% / 0 1px no-repeat;
+  transition: background-size 0.5s var(--ease-out);
+  outline: none;
+}
+
+.mail:hover,
+.mail:focus-visible {
+  background-size: 100% 1px;
+}
+
+.mail__arrow {
+  font-size: 0.6em;
+  transition: transform 0.45s var(--ease-out);
+}
+
+.mail:hover .mail__arrow {
+  transform: translate(3px, -3px);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.links {
+  list-style: none;
+  margin: 30px 0 0;
+  padding: 0;
+  max-width: 460px;
+  border-top: 1px solid var(--rule);
+}
+
+.links li {
+  border-bottom: 1px solid var(--rule);
+}
+
+.links__row {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 10px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+}
+
+a.links__row::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ink);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform 0.45s var(--ease-out);
+}
+
+a.links__row:hover,
+a.links__row:focus-visible {
+  color: var(--paper);
+  outline: none;
+}
+
+a.links__row:hover::before,
+a.links__row:focus-visible::before {
+  transform: none;
+}
+
+.links__arrow {
+  transition: transform 0.45s var(--ease-out);
+}
+
+a.links__row:hover .links__arrow {
+  transform: translate(2px, -2px);
+}
+
+.links__row.is-pending {
+  color: var(--ink-3);
+}
+
+.links__todo {
+  font-size: var(--fs-1);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+/* CV. */
+.cv {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+  gap: 34px;
+  align-items: start;
+}
+
+.cv__sheet {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+}
+
+/* Miniatura del CV: la lámina A4 en pequeño (proporción 210:297), con sus casillas de nivel. */
+.cvmini {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  aspect-ratio: 210 / 297;
+  padding: 14px 13px 10px;
+  background: var(--paper-lit);
+  border: 1px solid var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+  transform-origin: 50% 100%;
+  box-shadow: 0 1px 0 var(--rule);
+  transition:
+    transform 0.6s var(--ease-out),
+    box-shadow 0.6s var(--ease-out);
+}
+
+.cv__sheet:hover .cvmini,
+.cv__sheet:focus-visible .cvmini {
+  transform: translateY(-5px) rotate(-1.4deg);
+  box-shadow: 0 16px 26px -10px color-mix(in srgb, var(--ink) 35%, transparent);
+}
+
+.cv__sheet:focus-visible .cvmini {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.cvmini__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1.5px solid var(--ink);
+}
+
+.cvmini__head b {
+  font: 600 var(--fs-5)/1 var(--display);
+  letter-spacing: -0.02em;
+}
+
+.cvmini__head em {
+  font: normal 500 var(--fs-1)/1.25 var(--font);
+  color: var(--ink-2);
+}
+
+.cvmini__cols {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 0.9fr 1.3fr;
+  gap: 10px;
+}
+
+.cvmini__side {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding-right: 8px;
+  border-right: 1px solid var(--rule);
+}
+
+.cvmini__skill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.cvmini__skill > i {
+  height: 3px;
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.cvmini__main {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.cvmini__main i {
+  height: 3px;
+  background: color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.cvmini__main i.is-gap {
+  height: 1px;
+  margin: 3px 0;
+  background: var(--ink);
+}
+
+.cvmini__foot {
+  height: 10px;
+  border: 1px solid var(--ink);
+}
+
+.meta {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  max-width: 380px;
+}
+
+.meta div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.meta dt {
+  color: var(--ink-3);
+  font-size: var(--fs-1);
+}
+
+/* Contacto: la ficha va bajo los enlaces, al ancho de ellos. */
+.contact-meta {
+  max-width: 460px;
+  margin-top: 30px;
+}
+
+.contact-meta dd {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  text-align: right;
+}
+
+.meta dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.dev-note {
+  margin: 14px 0 0;
+  font-size: var(--fs-1);
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--ink-3);
+}
+
+.dev-note code {
+  font: inherit;
+  color: var(--ink-2);
+}
+
+/*
+ * Botones: una sola familia. De contorno o de tinta, 40 px de alto. Al pasar el cursor se acotan con
+ * una línea de cota (globals.css) y la flecha da un paso en su dirección.
+ */
+.btn {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--ink);
+  font: 600 var(--fs-1)/1 var(--font);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  transition: color 0.35s var(--ease-out);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.btn--ink {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.btn__arrow {
+  display: inline-block;
+  transition: transform 0.45s var(--ease-out);
+}
+
+.btn:hover .btn__arrow,
+.btn:focus-visible .btn__arrow {
+  transform: translate(2px, -2px);
+}
+
+.btn:hover .btn__arrow--right,
+.btn:focus-visible .btn__arrow--right {
+  transform: translateX(3px);
+}
+
+.btn:hover .btn__arrow--down,
+.btn:focus-visible .btn__arrow--down {
+  transform: translateY(2px);
+}
+
+/*
+ * Rótulo que cambia rodando (COPY EMAIL ↔ COPIED). Si uno no cabe en una línea (traducido es más
+ * largo) pasa a dos: los dos ocupan la celda entera, con el texto centrado, y al rodar salen enteros.
+ */
+.btn__swap {
+  display: inline-grid;
+  overflow: hidden;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.btn__swap span {
+  grid-area: 1 / 1;
+  display: flex;
+  align-items: center;
+  transition: transform 0.45s var(--ease-out);
+}
+
+.btn__swap span:last-child {
+  transform: translateY(115%);
+}
+
+.btn.is-done .btn__swap span:first-child {
+  transform: translateY(-115%);
+}
+
+.btn.is-done .btn__swap span:last-child {
+  transform: none;
+}
+
+.btn.is-done .led {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent);
+}
+
+/* ---------- Rodillo: un texto que cambia entra desde abajo ---------- */
+
+.roll {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  line-height: 1.2;
+}
+
+.roll > * {
+  display: inline-block;
+  animation: roll-in 0.55s var(--ease-out) both;
+}
+
+@keyframes roll-in {
+  from {
+    transform: translateY(110%);
+  }
+}
+
+/*
+ * Cambio de contenido sin parpadeo (Swap): el viejo y el nuevo, superpuestos en la misma celda, salen
+ * y entran a la vez. La máscara baja y sube un poco más que la línea: no corta rasgos (g, p, acentos).
+ */
+.swap {
+  --swap-dur: 0.64s;
+  display: inline-grid;
+  vertical-align: bottom;
+  overflow: hidden;
+  /* La máscara deja asomar las tildes de las mayúsculas (Í, Á, É…), que suben por encima de la línea. */
+  padding-block: 0.25em;
+  margin-block: -0.25em;
+}
+
+.swap__item {
+  grid-area: 1 / 1;
+  min-width: 0;
+}
+
+/* El viejo se apaga deprisa y el nuevo aparece un instante después: nunca se cruzan a media tinta. */
+.swap--roll > .is-in {
+  animation:
+    swap-from var(--swap-dur) var(--ease-swap) var(--swap-delay, 0ms) both,
+    swap-show calc(var(--swap-dur) * 0.45) linear calc(var(--swap-delay, 0ms) + var(--swap-dur) * 0.1) both;
+}
+
+.swap--roll > .is-out {
+  animation:
+    swap-to var(--swap-dur) var(--ease-swap) var(--swap-delay, 0ms) both,
+    swap-hide calc(var(--swap-dur) * 0.3) linear var(--swap-delay, 0ms) both;
+}
+
+@keyframes swap-from {
+  from {
+    transform: translateY(calc(var(--dir, 1) * 100%));
+  }
+}
+
+@keyframes swap-to {
+  to {
+    transform: translateY(calc(var(--dir, 1) * -100%));
+  }
+}
+
+@keyframes swap-show {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes swap-hide {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Fundido (párrafos): el viejo se va por encima sin ocupar sitio; el alto es ya el del nuevo. */
+.swap--fade {
+  position: relative;
+  display: grid;
+  overflow: visible;
+  padding-block: 0;
+  margin-block: 0;
+}
+
+.swap--fade > .is-out {
+  position: absolute;
+  inset: 0 0 auto 0;
+  pointer-events: none;
+  animation: swap-fade-to 0.3s var(--ease-io) both;
+}
+
+.swap--fade > .is-in {
+  animation: swap-fade-from 0.55s var(--ease-out) calc(var(--swap-delay, 0ms) + 0.12s) both;
+}
+
+@keyframes swap-fade-to {
+  to {
+    opacity: 0;
+    transform: translateY(calc(var(--dir, 1) * -8px));
+  }
+}
+
+@keyframes swap-fade-from {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--dir, 1) * 10px));
+  }
+}
+
+/* Contenedor que sigue el alto de su contenido (Morph). */
+.morph {
+  overflow: hidden;
+}
+
+.morph.is-ready {
+  transition: height 0.55s var(--ease-out);
+}
+
+/* ---------- Pie: línea de proceso ---------- */
+
+.rail {
+  position: fixed;
+  z-index: 25;
+  left: calc(var(--gutter) + 1px);
+  right: calc(var(--gutter) + 1px);
+  bottom: calc(var(--gutter) + 1px);
+  height: var(--rail-h);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  font: 500 var(--fs-1)/1 var(--font);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.rail__track {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.rail__line {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: 0 24px 0 20px;
+  list-style: none;
+}
+
+/*
+ * Rótulo de los nodos: uno solo, que se desliza de nodo a nodo (translate) y aparece en su sitio al
+ * entrar (is-jump: sin deslizarse desde el último). Un filete lo une a su nodo, como un globo de plano.
+ */
+.rail__tip {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  bottom: calc(100% + 16px);
+  width: 248px;
+  margin-left: -124px;
+  box-sizing: border-box;
+  display: grid;
+  gap: 6px;
+  padding: 11px 13px 12px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 0 16px 30px -20px color-mix(in srgb, var(--ink) 55%, transparent);
+  font-size: var(--fs-1);
+  letter-spacing: var(--track);
+  white-space: normal;
+  translate: var(--x) 0;
+  transform: translateY(6px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    translate 0.45s var(--ease-out),
+    transform 0.4s var(--ease-out),
+    opacity 0.2s,
+    visibility 0s linear 0.2s;
+}
+
+.rail__tip.is-on {
+  transform: none;
+  opacity: 1;
+  visibility: visible;
+  transition:
+    translate 0.45s var(--ease-out),
+    transform 0.4s var(--ease-out),
+    opacity 0.25s;
+}
+
+.rail__tip.is-jump {
+  transition:
+    transform 0.4s var(--ease-out),
+    opacity 0.25s;
+}
+
+.rail__tip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: calc(50% + var(--notch, 0px));
+  width: 1px;
+  height: 16px;
+  background: var(--ink);
+}
+
+.rail__tip em {
+  font-style: normal;
+  color: var(--ink-3);
+}
+
+.rail__tip b {
+  font: 600 var(--fs-4)/1.1 var(--display);
+  letter-spacing: -0.01em;
+  text-transform: none;
+}
+
+.rail__tip span {
+  color: var(--ink-2);
+}
+
+@media (hover: none) {
+  .rail__tip {
+    display: none;
+  }
+}
+
+.rail__item {
+  display: flex;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.rail__item:last-child {
+  flex: 0 0 auto;
+}
+
+.node {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+/* El anillo cuelga del propio símbolo: queda centrado sea cual sea el texto de debajo. */
+.node__glyph {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 15px;
+  height: 15px;
+}
+
+.node__glyph::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1px solid var(--ink);
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 0.3s,
+    transform 0.45s var(--ease-out);
+  pointer-events: none;
+}
+
+.node__shape {
+  display: block;
+  width: 15px;
+  height: 15px;
+  overflow: visible;
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1.2;
+  transition:
+    fill 0.35s,
+    transform 0.45s var(--ease-out);
+}
+
+.node.is-active .node__shape {
+  fill: var(--ink);
+}
+
+/* Salida: flecha hacia la puerta, sin relleno; activa, en trazo más grueso. */
+.node__shape--exit,
+.node.is-active .node__shape--exit {
+  fill: none;
+  stroke-width: 1.3;
+}
+
+.node.is-active .node__shape--exit {
+  stroke-width: 2;
+}
+
+.node:hover .node__shape,
+.node:focus-visible .node__shape,
+.node.is-hot .node__shape {
+  transform: scale(1.12);
+}
+
+.node.is-hot .node__glyph::before,
+.node:focus-visible .node__glyph::before {
+  opacity: 0.5;
+  transform: none;
+}
+
+.node:focus-visible {
+  outline: none;
+}
+
+.node__text {
+  display: flex;
+  gap: 6px;
+  font-size: var(--fs-1);
+  white-space: nowrap;
+  color: var(--ink-2);
+  transition: color 0.3s;
+}
+
+.node.is-active .node__text,
+.node:hover .node__text {
+  color: var(--ink);
+}
+
+.node__num {
+  font-weight: 600;
+}
+
+.rail__link {
+  position: relative;
+  top: -8px;
+  flex: 1;
+  height: 1px;
+  margin: 0 12px;
+  background: var(--rule);
+}
+
+.rail__link::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: -3px;
+  border-left: 5px solid var(--ink-3);
+  border-top: 3.5px solid transparent;
+  border-bottom: 3.5px solid transparent;
+}
+
+/* Avance real de la cámara: cambia en cada frame de scroll, así que va en capa propia (no repinta el pie). */
+.rail__fill {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -0.5px;
+  height: 2px;
+  background: var(--ink);
+  transform-origin: left;
+  transform: scaleX(0);
+  will-change: transform;
+}
+
+.rail__motto {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  min-width: 132px;
+  padding: 0 18px;
+  border-left: 1px solid var(--rule);
+  font-size: var(--fs-1);
+  letter-spacing: 0.18em;
+}
+
+.rail-btn {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--rail-h);
+  border-left: 1px solid var(--rule);
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    background-color 0.35s var(--ease-out),
+    color 0.35s var(--ease-out);
+}
+
+.rail-btn svg {
+  width: 16px;
+  height: 16px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+}
+
+.rail-btn__fill {
+  fill: currentColor;
+  stroke-linejoin: round;
+}
+
+.rail-btn__arrow {
+  transition: transform 0.45s var(--ease-out);
+}
+
+.rail-btn:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.rail-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -7px;
+}
+
+.rail-btn:hover .rail-btn__arrow,
+.rail-btn:focus-visible .rail-btn__arrow {
+  transform: translateX(-2px);
+}
+
+/* Rótulo del botón con su tecla: sube desde el pie. */
+.rail-btn__tip {
+  position: absolute;
+  right: 8px;
+  bottom: calc(100% + 8px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 7px 6px 10px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: var(--fs-1);
+  letter-spacing: var(--track-label);
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.25s,
+    transform 0.35s var(--ease-out);
+  pointer-events: none;
+}
+
+.rail-btn__tip kbd {
+  border-color: color-mix(in srgb, var(--paper) 45%, transparent);
+  color: var(--paper);
+}
+
+.rail-btn:hover .rail-btn__tip,
+.rail-btn:focus-visible .rail-btn__tip {
+  opacity: 1;
+  transform: none;
+}
+
+/* Indicación de scroll al empezar. */
+.cue {
+  position: fixed;
+  z-index: 22;
+  left: 50%;
+  bottom: calc(var(--gutter) + var(--rail-h) + 22px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  font: 500 var(--fs-1)/1 var(--font);
+  letter-spacing: 0.22em;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  transition:
+    opacity 0.5s var(--ease-out),
+    transform 0.6s var(--ease-out);
+  pointer-events: none;
+}
+
+.cue i {
+  position: relative;
+  width: 1px;
+  height: 16px;
+  overflow: hidden;
+  background: var(--rule);
+}
+
+.cue i::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 7px;
+  background: var(--ink);
+  animation: cue-run 1.6s var(--ease-io) infinite;
+}
+
+@keyframes cue-run {
+  from {
+    transform: translateY(-8px);
+  }
+  to {
+    transform: translateY(17px);
+  }
+}
+
+.cue__touch {
+  display: none;
+}
+
+.cue__keys {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.cue__keys kbd {
+  min-width: 18px;
+  height: 18px;
+  color: var(--ink-2);
+}
+
+/* Táctil: la indicación va arriba, bajo la barra (abajo está la ficha), y habla de arrastrar. */
+html.line-touch .cue {
+  display: flex;
+  top: calc(var(--gutter) + var(--bar-h) + 12px);
+  bottom: auto;
+}
+
+html.line-touch .cue__desk,
+html.line-touch .cue i,
+html.line-touch .cue__keys {
+  display: none;
+}
+
+html.line-touch .cue__touch {
+  display: inline;
+}
+
+/* Al irse deja de animarse y se oculta del todo (una animación infinita invisible seguiría pidiendo frames). */
+.cue.is-gone {
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, 8px);
+  transition:
+    opacity 0.5s var(--ease-out),
+    transform 0.6s var(--ease-out),
+    visibility 0s linear 0.6s;
+}
+
+.cue.is-gone i::after {
+  animation-play-state: paused;
+}
+
+/* ---------- Arranque de la nave ---------- */
+
+/* Mientras la nave se dibuja y arranca, solo la lámina: la interfaz espera fuera y entra después. */
+html.boot .bar,
+html.boot .rail,
+html.boot .pcard,
+html.boot .balloons,
+html.boot .cue {
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* La opacidad de la línea de referencia la lleva el propio elemento: aquí basta con esconderla. */
+html.boot .leader {
+  visibility: hidden;
+}
+
+html.boot .bar {
+  translate: 0 -12px;
+}
+
+html.boot .rail {
+  translate: 0 12px;
+}
+
+html.boot .pcard {
+  translate: 0 14px;
+}
+
+html.boot-in .bar,
+html.boot-in .rail,
+html.boot-in .pcard,
+html.boot-in .balloons,
+html.boot-in .cue {
+  transition:
+    opacity 0.7s var(--ease-out) var(--boot-delay, 0s),
+    translate 0.9s var(--ease-out) var(--boot-delay, 0s),
+    visibility 0s linear var(--boot-delay, 0s);
+}
+
+html.boot-in .rail {
+  --boot-delay: 0.06s;
+}
+
+html.boot-in .pcard {
+  --boot-delay: 0.22s;
+}
+
+html.boot-in .balloons {
+  --boot-delay: 0.36s;
+}
+
+html.boot-in .cue {
+  --boot-delay: 0.55s;
+}
+
+.boot-status {
+  display: none;
+  position: fixed;
+  z-index: 22;
+  left: 50%;
+  bottom: calc(var(--gutter) + var(--rail-h) + 22px);
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  font: 500 var(--fs-1)/1 var(--font);
+  letter-spacing: 0.22em;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+html.boot .boot-status,
+html.boot-in .boot-status {
+  display: flex;
+}
+
+/* Si la carga es rápida, el primer rótulo ni llega a verse. */
+html.boot .boot-status {
+  animation: boot-status-in 0.5s var(--ease-out) 0.35s both;
+}
+
+html.boot-in .boot-status {
+  opacity: 0;
+  transition: opacity 0.35s var(--ease-out);
+}
+
+@keyframes boot-status-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.boot-status__label.is-new {
+  animation: boot-label-in 0.45s var(--ease-out);
+}
+
+@keyframes boot-label-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+/* Avance del arranque: un filete que se llena. */
+.boot-status__bar {
+  position: relative;
+  width: 132px;
+  height: 1px;
+  overflow: hidden;
+  background: var(--rule);
+}
+
+.boot-status__bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform: scaleX(var(--boot, 0));
+  transform-origin: left;
+}
+
+/* ---------- Adaptación ---------- */
+
+/* La miga de la portada solo cuando caben marca, miga, apartados y menú. */
+@media (max-width: 1180px) {
+  .bar:not(.bar--sheet) .crumbs {
+    display: none;
+  }
+}
+
+/* En ventanas estrechas la indicación de scroll centrada quedaría bajo la ficha: va a la derecha. */
+@media (max-width: 1100px) {
+  html:not(.line-touch) .cue {
+    left: auto;
+    right: calc(var(--gutter) + 24px);
+    transform: none;
+  }
+  html:not(.line-touch) .cue.is-gone {
+    transform: translateY(8px);
+  }
+}
+
+@media (max-width: 1100px) {
+  .tab {
+    padding: 0 12px;
+  }
+  .plist__field {
+    display: none;
+  }
+  .plist__row {
+    grid-template-columns: 34px minmax(0, 1fr) 40px 18px;
+  }
+}
+
+@media (max-width: 980px) {
+  .node__name {
+    display: none;
+  }
+  .about-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+}
+
+@media (max-width: 720px) {
+  .bar {
+    grid-template-columns: 1fr auto auto;
+  }
+  .bar__brand {
+    padding: 0 14px;
+    border-right: 0;
+  }
+  .tabs {
+    display: none;
+  }
+  .menu-btn {
+    padding: 0 16px;
+  }
+  .drawer__tabs {
+    display: flex;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--rule);
+  }
+  .drawer__tabs button {
+    all: unset;
+    flex: 1 0 auto;
+    padding: 15px 14px 13px;
+    text-align: center;
+    color: var(--ink-2);
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+  }
+  .drawer__tabs button.is-active {
+    color: var(--ink);
+    border-bottom-color: var(--ink);
+  }
+  .panel {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+  .panel__side {
+    padding: 20px 16px 4px;
+    border-right: 0;
+    gap: 10px;
+  }
+  .panel__title {
+    font-size: var(--fs-6);
+  }
+  .peek,
+  .plist__year {
+    display: none;
+  }
+  /* Chips de About a tamaño de dedo. */
+  .chip {
+    min-width: 40px;
+    height: 34px;
+  }
+  .plist__row {
+    grid-template-columns: 34px minmax(0, 1fr) 18px;
+  }
+  .panel__lead {
+    margin-top: 0;
+    max-width: none;
+  }
+  .panel__main {
+    padding: 16px 16px 26px;
+  }
+  /* CV: la miniatura pequeña, al lado de los datos (a lo ancho era una hoja enorme). */
+  .cv {
+    grid-template-columns: 104px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .cvmini {
+    gap: 5px;
+    padding: 8px 7px 6px;
+  }
+  .cvmini__head {
+    padding-bottom: 5px;
+  }
+  .cvmini__head b {
+    font-size: var(--fs-1);
+  }
+  .cvmini__head em {
+    display: none;
+  }
+  .cvmini__cols {
+    gap: 5px;
+  }
+  .cvmini__side {
+    gap: 3px;
+    padding-right: 4px;
+  }
+  .cvmini__main {
+    gap: 3px;
+  }
+  .cv .meta div {
+    flex-direction: column;
+    gap: 3px;
+  }
+  .cv .actions {
+    margin-top: 14px;
+  }
+  .cv .actions .btn {
+    flex: 1 1 100%;
+  }
+  .about {
+    font-size: var(--fs-3);
+  }
+  /* El menú ocupa toda la pantalla bajo la barra: sin la ficha ni el pie asomando por debajo. */
+  .drawer__sheet {
+    height: calc(100dvh - var(--bar-h) - var(--gutter) * 2 - 2px);
+    max-height: none;
+  }
+  .leader,
+  .cue {
+    display: none;
+  }
+  .rail__motto {
+    display: none;
+  }
+  /* Pie: un raíl limpio, sin puntas de flecha entre estaciones, y botones más estrechos. */
+  .rail__line {
+    padding: 0 12px;
+  }
+  .rail__link {
+    margin: 0 4px;
+  }
+  .rail__link::after {
+    display: none;
+  }
+  .rail-btn {
+    width: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer,
+  .drawer[data-state='open'] {
+    transition-duration: 0s;
+  }
+  /* Sin movimiento, pero la salida sigue acabando (y se retira). */
+  .swap__item.is-in,
+  .swap__item.is-out,
+  .panel.is-leaving,
+  .panel.is-leaving * {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+  }
+  .panel__kicker > span,
+  .panel__title > span {
+    animation: none;
+  }
+  .panels {
+    transition: none;
+  }
+  .morph.is-ready {
+    transition: none;
+  }
+  [data-anim],
+  .roll > *,
+  .cue i::after,
+  .led--pulse::before {
+    animation: none;
+  }
+}
+
+/* ---------- Medidor de fps (tecla F o ?fps) ---------- */
+
+.fps {
+  all: unset;
+  box-sizing: border-box;
+  position: fixed;
+  z-index: 60;
+  left: calc(var(--gutter) + 12px);
+  top: calc(var(--gutter) + var(--bar-h) + 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 196px;
+  padding: 9px 10px 8px;
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+}
+
+.fps__text {
+  margin: 0;
+  font: 500 var(--fs-1)/1.45 var(--font);
+  letter-spacing: 0.04em;
+  white-space: pre;
+}
+
+.fps__graph {
+  display: block;
+  width: 100%;
+  height: 40px;
+}
+
+.fps__graph--motion {
+  height: 28px;
+  border-top: 1px solid color-mix(in srgb, var(--paper) 25%, transparent);
+}
+
+/* ---------- Idioma ---------- */
+
+/* Celda EN · ES junto al menú: el idioma de la página en tinta, el otro apagado; al pasar, se invierte. */
+.lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 18px;
+  border-left: 1px solid var(--rule);
+  font-weight: 600;
+  letter-spacing: var(--track-label);
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: color 0.35s var(--ease-out);
+}
+
+.lang-btn span {
+  display: inline-flex;
+  gap: 6px;
+  transition: color 0.35s var(--ease-out);
+}
+
+.lang-btn i {
+  font-style: normal;
+  color: var(--ink-3);
+}
+
+.lang-btn .is-on {
+  color: var(--ink);
+}
+
+.lang-btn:hover span {
+  color: var(--ink);
+}
+
+.lang-btn:hover .is-on {
+  color: var(--ink-3);
+}
+
+.lang-btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -7px;
+}
+
+@media (max-width: 720px) {
+  .lang-btn {
+    padding: 0 12px;
+  }
+}

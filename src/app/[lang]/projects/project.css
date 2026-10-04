@@ -1,0 +1,218 @@
+/* Página de proyecto provisional: la hoja con su cajetín y la lámina de la máquina. Tokens: globals.css. */
+
+.proj {
+  --pad: clamp(16px, 4vw, 56px);
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 var(--pad);
+  box-sizing: content-box;
+  font: 500 var(--fs-1)/1.4 var(--font);
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.proj *,
+.proj *::before,
+.proj *::after {
+  box-sizing: border-box;
+}
+
+.proj__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  grid-template-areas:
+    'count count'
+    'title lead'
+    'title meta';
+  gap: 18px 64px;
+  padding: clamp(40px, 8vh, 96px) 0 clamp(32px, 5vh, 56px);
+}
+
+.proj__count {
+  grid-area: count;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 0;
+  color: var(--ink-3);
+  animation: proj-rise 0.8s var(--ease-out) both;
+}
+
+.proj__count b {
+  font-size: var(--fs-2);
+  color: var(--ink);
+}
+
+.proj__count em {
+  font-style: normal;
+}
+
+.proj__count span {
+  margin-left: 14px;
+  color: var(--ink-2);
+  letter-spacing: var(--track-label);
+}
+
+.proj__title {
+  grid-area: title;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font: 600 var(--fs-hero-2) / 0.92 var(--display);
+  letter-spacing: -0.04em;
+  text-transform: none;
+}
+
+/* Cada línea del título sube por separado, como en la ficha de la línea. */
+.proj__title > span {
+  display: block;
+  animation: proj-rise 0.9s var(--ease-out) both;
+  animation-delay: calc(60ms + var(--i, 0) * 80ms);
+}
+
+.proj__lead {
+  grid-area: lead;
+  align-self: end;
+  max-width: 40ch;
+  margin: 0;
+  font: 400 clamp(var(--fs-4), 1.6vw, var(--fs-5)) / 1.5 var(--display);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink);
+  animation: proj-rise 0.9s var(--ease-out) 0.18s both;
+}
+
+/* Cajetín: celdas con filete, como el de un plano. */
+.proj__meta {
+  grid-area: meta;
+  align-self: start;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  max-width: 520px;
+  margin: 0;
+  border: 1px solid var(--ink);
+  animation: proj-rise 0.9s var(--ease-out) 0.24s both;
+}
+
+.proj__meta div {
+  display: grid;
+  gap: 6px;
+  padding: 10px 14px 12px;
+}
+
+.proj__meta div + div {
+  border-left: 1px solid var(--rule-strong);
+}
+
+.proj__meta dt {
+  color: var(--ink-3);
+  letter-spacing: var(--track-label);
+}
+
+.proj__meta dd {
+  margin: 0;
+  font: 600 var(--fs-3)/1.3 var(--display);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* La lámina de la máquina y, al lado, el sello y las dos salidas. */
+.proj__plate {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(260px, 1fr);
+  gap: clamp(24px, 4vw, 56px);
+  align-items: end;
+  animation: proj-rise 1s var(--ease-out) 0.3s both;
+}
+
+.proj__caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--rule-strong);
+  background: var(--paper);
+}
+
+.proj__caption b {
+  flex: none;
+}
+
+.proj__caption span {
+  color: var(--ink-2);
+  text-align: right;
+}
+
+.proj__side {
+  display: grid;
+  justify-items: start;
+  gap: 22px;
+  padding-bottom: 6px;
+}
+
+.proj__note {
+  max-width: 36ch;
+  margin: 0;
+  font: 400 var(--fs-3)/1.6 var(--display);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-2);
+}
+
+.proj__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@keyframes proj-rise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@media (max-width: 1100px) {
+  .proj__plate {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .proj__side {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 18px 28px;
+  }
+  .proj__actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .proj__head {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: 'count' 'title' 'lead' 'meta';
+    padding-top: 32px;
+  }
+  .proj__meta {
+    max-width: none;
+  }
+  .proj__caption span {
+    display: none;
+  }
+  .proj__side {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .proj__actions .btn {
+    flex: 1 1 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .proj__count,
+  .proj__title > span,
+  .proj__lead,
+  .proj__meta,
+  .proj__plate {
+    animation: none;
+  }
+}

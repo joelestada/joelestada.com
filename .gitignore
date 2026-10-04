@@ -1,0 +1,13 @@
+# Dependencias y compilación
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# Capturas y medidas de los scripts (scripts/lib/cli.mjs)
+captures/
+
+# Sistema y herramientas locales
+.DS_Store
+.claude/

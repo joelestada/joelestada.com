@@ -1,0 +1,9 @@
+.next/
+node_modules/
+out/
+public/
+docs/
+package-lock.json
+next-env.d.ts
+# Trazado del logotipo de Ottometrix: un solo array de coordenadas, generado.
+src/scene/stations/ottometrixMark.ts

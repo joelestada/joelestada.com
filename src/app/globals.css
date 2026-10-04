@@ -1,0 +1,247 @@
+/*
+ * Tokens de la capa HTML, comunes a todas las páginas (los colores salen de la paleta: layout.tsx).
+ * Tipografía: mono para todo lo que es rótulo, dato o control; sans para titulares y texto corrido.
+ * Movimiento: --ease-out para entradas, --ease-io para recorridos y --ease-sheet para láminas que cubren.
+ */
+:root {
+  --gutter: 14px;
+  --bar-h: 48px;
+  --rail-h: 62px;
+  --rule: color-mix(in srgb, var(--ink) 20%, transparent);
+  --rule-soft: color-mix(in srgb, var(--ink) 9%, transparent);
+  --rule-strong: color-mix(in srgb, var(--ink) 55%, transparent);
+  --ink-2: color-mix(in srgb, var(--ink) 78%, transparent);
+  --ink-3: color-mix(in srgb, var(--ink) 68%, transparent);
+  --wash: color-mix(in srgb, var(--ink) 6%, transparent);
+  --font: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Titulares: sans de la misma familia que la mono. El stencil queda solo pintado en la escena. */
+  --display: 'IBM Plex Sans', system-ui, sans-serif;
+  /* Espaciado de las mayúsculas en mono: controles y datos, rótulos, y antetítulos sueltos. */
+  --track: 0.14em;
+  --track-label: 0.16em;
+  --track-wide: 0.2em;
+  /*
+   * Escala tipográfica: todo texto usa uno de estos pasos. Abajo van de dos en dos píxeles (la mono
+   * en mayúsculas necesita matices pequeños); desde la entradilla, cada paso es ≈1,45 veces el anterior.
+   * Los titulares fluidos van con clamp() entre dos pasos, y la portada de hoja con --fs-hero.
+   */
+  --fs-1: 11px; /* rótulos, controles y datos en mono */
+  --fs-2: 13px; /* texto secundario y datos destacados */
+  --fs-3: 15px; /* texto de interfaz (fichas, notas, pies) */
+  --fs-4: 17px; /* texto de lectura */
+  --fs-5: 21px; /* entradillas y titulillos */
+  --fs-6: 30px; /* títulos de ficha */
+  --fs-7: 44px; /* títulos de panel y de apartado */
+  --fs-8: 64px; /* cifras y titulares grandes */
+  --fs-hero: clamp(var(--fs-8), 11vw, 168px); /* titular de portada de hoja */
+  --fs-hero-2: clamp(var(--fs-7), 8vw, 120px); /* el mismo, cuando ocupa dos líneas junto a la entradilla */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-sheet: cubic-bezier(0.76, 0, 0.24, 1);
+  /* Cambio de texto (rodillo): sale deprisa y se posa despacio, sin rebote. */
+  --ease-swap: cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+@media (min-width: 1400px) {
+  :root {
+    --gutter: 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  :root {
+    --gutter: 8px;
+    --bar-h: 46px;
+    --rail-h: 54px;
+  }
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  scrollbar-width: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
+/* Sin el destello del navegador al tocar: cada control ya marca su propio estado. */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Las anclas de las páginas de lectura se recorren, no saltan (la portada no se desplaza). */
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.line-lock) {
+    scroll-behavior: smooth;
+  }
+}
+
+/*
+ * Foco de teclado por defecto: un filete de tinta separado del control. Sin peso, para que cualquier
+ * control con su propio foco (celdas de barra, filas) lo sustituya.
+ */
+:where(a, button, [tabindex]):focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Teclas en las leyendas de atajos. */
+kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border: 1px solid var(--rule-strong);
+  border-bottom-width: 2px;
+  font: 600 var(--fs-1)/1 var(--font);
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+/*
+ * Portada: la página no se desplaza; Lenis mueve una pista fija (rueda, trackpad o dedo). Así la barra
+ * del navegador del móvil no aparece y desaparece y Safari no recoloca a destiempo las capas fijas.
+ * En táctil el gesto es horizontal; el vertical queda para los paneles con scroll.
+ */
+html.line-lock,
+html.line-lock body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.line-touch {
+  touch-action: pan-y pinch-zoom;
+}
+
+html.line-lock .track {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+/* El cursor se vuelve mano sobre una máquina (lo decide el rayo de la escena). */
+html.is-pointing,
+html.is-pointing body {
+  cursor: pointer;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+::selection {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+/*
+ * Botones: al pasar el cursor (o con el foco) se acotan, como en un plano. Primero aparecen los dos
+ * topes oblicuos, luego la línea de cota se traza entre ellos de izquierda a derecha. Al salir, la
+ * línea sigue su sentido y se recoge hacia la derecha, y después se apagan los topes. Va en el color
+ * del rótulo; --cota-x es el margen del botón (--cota-r, el derecho si es otro) y --cota-y la altura
+ * de la línea sobre su borde. El nombre de la barra se acota igual al pasar por la marca.
+ */
+.bar__name::before,
+.btn::before,
+.pcard__enter::before,
+.pcard__explode::before,
+.pj-cta::before {
+  content: '';
+  position: absolute;
+  left: var(--cota-x, 14px);
+  right: var(--cota-r, var(--cota-x, 14px));
+  bottom: var(--cota-y, 6px);
+  z-index: -1;
+  height: 1px;
+  background: currentColor;
+  pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.32s cubic-bezier(0.55, 0, 0.75, 0.2);
+}
+
+.bar__name::after,
+.btn::after,
+.pcard__enter::after,
+.pcard__explode::after,
+.pj-cta::after {
+  --tope: linear-gradient(135deg, transparent calc(50% - 0.6px), currentColor calc(50% - 0.6px) calc(50% + 0.6px), transparent calc(50% + 0.6px));
+  content: '';
+  position: absolute;
+  left: calc(var(--cota-x, 14px) - 3px);
+  right: calc(var(--cota-r, var(--cota-x, 14px)) - 3px);
+  bottom: calc(var(--cota-y, 6px) - 2.5px);
+  z-index: -1;
+  height: 6px;
+  background:
+    var(--tope) left / 6px 6px no-repeat,
+    var(--tope) right / 6px 6px no-repeat;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.4);
+  transition:
+    opacity 0.18s 0.2s,
+    transform 0.18s 0.2s;
+}
+
+.bar__brand:hover .bar__name::before,
+.bar__brand:focus-visible .bar__name::before,
+.btn:hover::before,
+.btn:focus-visible::before,
+.pcard__enter:hover::before,
+.pcard__enter:focus-visible::before,
+.pcard__explode:hover::before,
+.pcard__explode:focus-visible::before,
+.pcard__explode.is-on::before,
+.pj-cta:hover::before,
+.pj-cta:focus-visible::before {
+  transform: none;
+  transform-origin: left;
+  transition: transform 0.55s var(--ease-out) 0.07s;
+}
+
+.bar__brand:hover .bar__name::after,
+.bar__brand:focus-visible .bar__name::after,
+.btn:hover::after,
+.btn:focus-visible::after,
+.pcard__enter:hover::after,
+.pcard__enter:focus-visible::after,
+.pcard__explode:hover::after,
+.pcard__explode:focus-visible::after,
+.pcard__explode.is-on::after,
+.pj-cta:hover::after,
+.pj-cta:focus-visible::after {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.16s,
+    transform 0.3s var(--ease-out);
+}

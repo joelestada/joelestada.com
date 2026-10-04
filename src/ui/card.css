@@ -1,0 +1,735 @@
+/*
+ * Ficha de la máquina (abajo a la izquierda): el cajetín de la hoja que se mira.
+ * - Cabecera: el globo con su número (el de la máquina en la escena), la disciplina y el año.
+ * - Título en un área de alto fijo (dos líneas): cerrada, la ficha mide siempre lo mismo.
+ * - Cuerpo que se despliega hacia arriba: descripción, aviso del pulsador y las dos acciones.
+ * - Pie: una fila de celdas como las de la barra (acción, contador, anterior y siguiente), anclada
+ *   abajo y de ancho fijo: las flechas no se mueven nunca.
+ */
+
+.pcard {
+  --card-pad: 20px;
+  --foot-h: 46px;
+  position: fixed;
+  z-index: 24;
+  left: calc(var(--gutter) + 24px);
+  bottom: calc(var(--gutter) + var(--rail-h) + 24px);
+  width: 352px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--ink) 5%, transparent),
+    0 18px 36px -28px color-mix(in srgb, var(--ink) 45%, transparent);
+  font: 500 var(--fs-1)/1.3 var(--font);
+  letter-spacing: var(--track);
+  text-transform: uppercase;
+  color: var(--ink);
+  transition:
+    border-color 0.35s,
+    box-shadow 0.6s var(--ease-out);
+}
+
+.pcard:hover,
+.pcard.is-open {
+  border-color: var(--ink);
+}
+
+.pcard.is-open {
+  box-shadow:
+    0 1px 0 color-mix(in srgb, var(--ink) 6%, transparent),
+    0 30px 60px -32px color-mix(in srgb, var(--ink) 62%, transparent);
+}
+
+.pcard__sheet {
+  padding: 16px var(--card-pad) 18px;
+}
+
+/* ---------- Cabecera ---------- */
+
+.pcard__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 24px;
+  margin-bottom: 14px;
+}
+
+/* El globo de la máquina en curso, como en la escena: tinta llena y número en papel; el número rueda dentro del círculo. */
+.pcard__badge {
+  flex: none;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  font: 600 var(--fs-1)/1 var(--font);
+  letter-spacing: 0;
+}
+
+.pcard__badge > .swap {
+  display: grid;
+  padding: 0;
+  margin: 0;
+}
+
+.pcard__badge .swap__item {
+  display: grid;
+  place-items: center;
+}
+
+.pcard__badge svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+}
+
+.pcard__field {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.pcard__field > .swap {
+  max-width: 100%;
+}
+
+.pcard__field .swap__item {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-block: 0.25em;
+  margin-block: -0.25em;
+}
+
+.pcard__meta {
+  flex: none;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.pcard__meta .led {
+  margin-right: 2px;
+  animation: slip-in 0.6s var(--ease-out) 0.2s both;
+}
+
+@keyframes slip-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+/* ---------- Título: dos líneas fijas, cada una con su rodillo ---------- */
+
+/*
+ * El área recorta lo que sale de ella (al encoger de dos líneas a una con la ficha abierta) con un
+ * margen abajo para los rasgos descendentes (g, p), compensado para no ocupar sitio.
+ */
+.pcard__title {
+  height: 2.08em;
+  margin: 0 0 -0.16em;
+  padding-bottom: 0.16em;
+  overflow: hidden;
+  font: 600 var(--fs-6)/1.04 var(--display);
+  letter-spacing: -0.022em;
+  text-transform: none;
+  transition: height 0.6s var(--ease-out);
+}
+
+/* Abierta, el área se ajusta a las líneas del título: sin hueco sobre la descripción. */
+.pcard.is-open .pcard__title {
+  height: calc(var(--lines, 2) * 1.04em);
+}
+
+.pcard__line {
+  display: block;
+}
+
+.pcard__oneline {
+  display: none;
+}
+
+/* ---------- Cuerpo desplegable ---------- */
+
+.pcard__more {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.6s var(--ease-out);
+}
+
+/*
+ * Aire bajo lo último del cuerpo, dentro del recorte: la ficha cuelga desde abajo y sus medidas son
+ * fraccionarias; con el borde de los botones justo en el filo, el redondeo a píxeles de pantalla a
+ * veces se lo comía.
+ */
+.pcard__inner > .swap {
+  padding-bottom: 2px;
+}
+
+.pcard.is-open .pcard__more {
+  grid-template-rows: 1fr;
+}
+
+.pcard__inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pcard__desc,
+.pcard__bom,
+.pcard__tip,
+.pcard__mail,
+.pcard__buttons {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
+}
+
+.pcard.is-open :is(.pcard__desc, .pcard__bom, .pcard__tip, .pcard__mail, .pcard__buttons) {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.5s var(--ease-out) var(--d, 0.12s),
+    transform 0.6s var(--ease-out) var(--d, 0.12s);
+}
+
+.pcard.is-open .pcard__tip {
+  --d: 0.18s;
+}
+
+.pcard.is-open .pcard__buttons {
+  --d: 0.24s;
+}
+
+.pcard__text {
+  margin-top: 14px;
+}
+
+.pcard__desc {
+  margin: 0;
+  font: 400 var(--fs-3)/1.5 var(--display);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--ink-2);
+}
+
+/* El pulsador de hombre muerto: un anillo que se llena, como el que rodea al globo. */
+.pcard__tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 12px 0 0;
+  color: var(--ink-3);
+  text-wrap: balance;
+}
+
+/* El anillo, centrado en la primera línea (si el aviso ocupa dos, no flota entre ellas). */
+.pcard__tip i {
+  position: relative;
+  flex: none;
+  width: 11px;
+  height: 11px;
+  margin-top: calc((1.3em - 13px) / 2);
+  border-radius: 50%;
+  border: 1px solid currentColor;
+}
+
+.pcard__tip i::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: conic-gradient(currentColor 0 62%, transparent 62% 100%);
+}
+
+/* Lista de piezas del despiece (sustituye a la descripción mientras la máquina está abierta). */
+.pcard__bom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  letter-spacing: 0.12em;
+}
+
+.pcard__bom li {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  color: var(--ink-2);
+  cursor: default;
+  transition: color 0.2s;
+}
+
+.pcard__bom li:hover {
+  color: var(--ink);
+}
+
+.pcard__bom b {
+  flex: none;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.pcard__bom span {
+  /* Nombres enteros: si no caben, pasan a una segunda línea (en español son más largos). */
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Final de la línea: el email a mano. */
+.pcard__mail {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 14px;
+  padding-bottom: 3px;
+  font: 500 var(--fs-3)/1.2 var(--font);
+  letter-spacing: 0;
+  text-transform: none;
+  color: inherit;
+  text-decoration: none;
+  background: linear-gradient(var(--ink), var(--ink)) 0 100% / 0 1px no-repeat;
+  transition:
+    opacity 0.5s var(--ease-out),
+    transform 0.6s var(--ease-out),
+    background-size 0.5s var(--ease-out);
+}
+
+.pcard__mail:hover,
+.pcard__mail:focus-visible {
+  background-size: 100% 1px;
+}
+
+.pcard__mail-arrow {
+  font-size: 0.8em;
+  transition: transform 0.45s var(--ease-out);
+}
+
+.pcard__mail:hover .pcard__mail-arrow {
+  transform: translate(2px, -2px);
+}
+
+/* ---------- Las dos acciones del cuerpo ---------- */
+
+.pcard__buttons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/*
+ * Los rótulos de los botones pueden ser más largos que en inglés (el traductor del navegador, una
+ * fuente distinta): en lugar de cortarse, pasan a dos líneas equilibradas y el botón crece; los dos
+ * de la fila crecen a la vez.
+ */
+.pcard__explode > span,
+.pcard__enter > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+/* Lo mismo con los del final de la línea (copiar el email y el CV): crecen con aire, no se llenan. */
+.pcard__buttons .btn {
+  height: auto;
+  min-height: 40px;
+  padding: 7px 12px;
+}
+
+/* En la presentación, echar a andar la línea es lo principal: su botón es el ancho. */
+.pcard.is-intro .pcard__buttons {
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+}
+
+/* Vista explosionada: botón de contorno con el despiece dibujado (esquinas que se abren). */
+.pcard__explode {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--ink);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+
+/* Con la máquina despiezada, el botón queda acotado (globals.css): es lo seleccionado. */
+
+.pcard__explode svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  overflow: visible;
+}
+
+.pcard__explode-core {
+  fill: var(--ink);
+}
+
+.pcard__explode-out {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.3;
+  transform-origin: 8px 8px;
+  transition: transform 0.45s var(--ease-out);
+}
+
+.pcard__explode:hover .pcard__explode-out,
+.pcard__explode:focus-visible .pcard__explode-out {
+  transform: scale(1.18);
+}
+
+.pcard__explode.is-on .pcard__explode-out {
+  transform: scale(0.78);
+}
+
+.pcard__explode:focus-visible,
+.pcard__enter:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.pcard__enter {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 13px;
+  background: var(--ink);
+  color: var(--paper);
+  text-decoration: none;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.12em;
+}
+
+.pcard__arrow {
+  flex: none;
+  font-size: var(--fs-3);
+  transition: transform 0.45s var(--ease-out);
+}
+
+.pcard__enter:hover .pcard__arrow {
+  transform: translateX(5px);
+}
+
+/* ---------- Pie: acción, contador, anterior y siguiente ---------- */
+
+.pcard__foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 84px var(--foot-h) var(--foot-h);
+  height: var(--foot-h);
+  border-top: 1px solid var(--rule);
+  transition: border-color 0.35s;
+}
+
+.pcard:hover .pcard__foot,
+.pcard.is-open .pcard__foot {
+  border-top-color: var(--rule-strong);
+}
+
+.pcard__foot > * + * {
+  border-left: 1px solid var(--rule);
+}
+
+/* Celdas pulsables: la tinta sube al pasar, como en la celda del menú de la barra. */
+.pcard__action,
+.pcard__step {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  cursor: pointer;
+  color: var(--ink);
+  transition: color 0.35s var(--ease-out);
+}
+
+.pcard__action::before,
+.pcard__step::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--ink);
+  transform: translateY(101%);
+  transition: transform 0.45s var(--ease-out);
+}
+
+.pcard__action:hover,
+.pcard__step:hover:not(:disabled) {
+  color: var(--paper);
+}
+
+.pcard__action:hover::before,
+.pcard__step:hover:not(:disabled)::before {
+  transform: none;
+}
+
+.pcard__action:focus-visible,
+.pcard__step:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -6px;
+}
+
+.pcard__action {
+  display: flex;
+  align-items: center;
+  padding: 0 16px 0 var(--card-pad);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+/* Si el rótulo no cabe (traducido es más largo), pasa a dos líneas: el pie tiene alto para ellas. */
+.pcard__action-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.pcard__action > .swap {
+  flex: 1;
+  min-width: 0;
+}
+
+.pcard__action .swap__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* DETAILS ↔ CLOSE: el rótulo cambia rodando, como MENU ↔ CLOSE en la barra. */
+.pcard__action-label--swap {
+  display: inline-grid;
+  grid-template-columns: minmax(0, auto);
+  height: 1.3em;
+  line-height: 1.3;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* Este rueda en una sola línea: si no cabe, termina en puntos suspensivos, sin salirse de su celda. */
+.pcard__action-label--swap span {
+  grid-area: 1 / 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: transform 0.45s var(--ease-out);
+}
+
+.pcard__action-label--swap span:last-child {
+  transform: translateY(115%);
+}
+
+.pcard.is-open .pcard__action-label--swap span:first-child {
+  transform: translateY(-115%);
+}
+
+.pcard.is-open .pcard__action-label--swap span:last-child {
+  transform: none;
+}
+
+/* El más: gira al pasar y, con la ficha abierta, es la cruz de cerrar. */
+.pcard__plus {
+  position: relative;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  transition: transform 0.5s var(--ease-out);
+}
+
+.pcard__plus::before,
+.pcard__plus::after {
+  content: '';
+  position: absolute;
+  background: currentColor;
+}
+
+.pcard__plus::before {
+  left: 0;
+  right: 0;
+  top: 4.25px;
+  height: 1.5px;
+}
+
+.pcard__plus::after {
+  top: 0;
+  bottom: 0;
+  left: 4.25px;
+  width: 1.5px;
+}
+
+.pcard__action:hover .pcard__plus {
+  transform: rotate(90deg);
+}
+
+.pcard.is-open .pcard__plus {
+  transform: rotate(45deg);
+}
+
+.pcard.is-open .pcard__action:hover .pcard__plus {
+  transform: rotate(135deg);
+}
+
+/* Presentación: ABOUT abre un apartado del panel, no cierra la ficha (el + no pasa a ×). */
+.pcard.is-intro .pcard__plus {
+  transform: none;
+}
+
+.pcard.is-intro .pcard__action:hover .pcard__plus {
+  transform: rotate(90deg);
+}
+
+.pcard__action-icon--start {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.3;
+  transition: transform 0.45s var(--ease-out);
+}
+
+.pcard__action:hover .pcard__action-icon--start {
+  transform: translateX(-3px);
+}
+
+.pcard__count {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.pcard__count > .swap > .swap__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pcard__count b {
+  font-weight: 600;
+}
+
+.pcard__count em {
+  font-style: normal;
+  color: var(--ink-3);
+}
+
+.pcard__step {
+  display: grid;
+  place-items: center;
+}
+
+.pcard__step svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  transition: transform 0.4s var(--ease-out);
+}
+
+.pcard__step:nth-last-child(2):hover:not(:disabled) svg {
+  transform: translateX(-2px);
+}
+
+.pcard__step:last-child:hover:not(:disabled) svg {
+  transform: translateX(2px);
+}
+
+.pcard__step:disabled {
+  color: var(--ink-3);
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ---------- Móvil: a lo ancho, título en una línea, más baja ---------- */
+
+@media (max-width: 720px) {
+  .pcard {
+    --card-pad: 14px;
+    --foot-h: 44px;
+    left: calc(var(--gutter) + 10px);
+    right: calc(var(--gutter) + 10px);
+    bottom: calc(var(--gutter) + var(--rail-h) + 10px);
+    width: auto;
+  }
+  .pcard__sheet {
+    padding: 12px var(--card-pad) 13px;
+  }
+  .pcard__head {
+    margin-bottom: 8px;
+  }
+  .pcard__title,
+  .pcard.is-open .pcard__title {
+    height: 1.12em;
+    font-size: var(--fs-5);
+    line-height: 1.12;
+    white-space: nowrap;
+  }
+  .pcard__lines {
+    display: none;
+  }
+  .pcard__oneline {
+    display: block;
+  }
+  .pcard__text {
+    margin-top: 8px;
+  }
+  .pcard__desc {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: var(--fs-2);
+    line-height: 1.45;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+  .pcard__tip {
+    display: none;
+  }
+  .pcard__bom {
+    gap: 3px 12px;
+  }
+  .pcard__buttons {
+    margin-top: 10px;
+    gap: 6px;
+  }
+  .pcard__explode,
+  .pcard__enter {
+    min-height: 40px;
+    padding-block: 6px;
+  }
+  .pcard__foot {
+    grid-template-columns: minmax(0, 1fr) 76px var(--foot-h) var(--foot-h);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pcard__meta .led {
+    animation: none;
+  }
+}
