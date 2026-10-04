@@ -1,5 +1,6 @@
 import { preload } from 'react-dom';
 import { SCROLL } from '@/config/layout';
+import { cvIn } from '@/config/cv';
 import { SITE, siteIn } from '@/config/site';
 import { stationsIn } from '@/config/stations';
 import { DEFAULT_LANG, isLang, localePath } from '@/i18n/lang';
@@ -28,6 +29,9 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
     address: { '@type': 'PostalAddress', addressLocality: 'Valencia', addressCountry: 'ES' },
     alumniOf: { '@type': 'CollegeOrUniversity', name: 'Universitat Jaume I' },
     sameAs: SITE.contact.links.map((l) => l.href).filter(Boolean),
+    knowsAbout: cvIn(lang).skills.flatMap((g) => g.items.map((i) => i.name)),
+    knowsLanguage: cvIn(lang).languages.map((l) => l.name),
+    email: `mailto:${SITE.contact.email}`,
   };
   const jsonLd = {
     '@context': 'https://schema.org',
