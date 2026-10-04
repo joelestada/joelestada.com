@@ -11,3 +11,6 @@ captures/
 # Sistema y herramientas locales
 .DS_Store
 .claude/
+
+# Borradores de contenido con notas internas (se quedan en el repo privado de archivo)
+docs/contenido/
