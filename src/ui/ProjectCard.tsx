@@ -97,6 +97,24 @@ function Title({ k, lines, dir }: { k: string; lines: string[]; dir: number }) {
   );
 }
 
+/**
+ * Las disciplinas de la ficha («QUANT · DATOS · SOFTWARE»), una pieza por disciplina: si no caben,
+ * sobran enteras desde el final (a 320 px quedaba «QUANT · DATOS · SOF…»). Los espacios del separador
+ * son duros, del mismo ancho que los normales: cuando cabe todo, se ve igual que el texto seguido.
+ */
+function FieldParts({ text }: { text: string }) {
+  return (
+    <span className="pcard__parts">
+      {text.split(' · ').map((part, i) => (
+        <span key={i}>
+          {i > 0 && '\u00a0·\u00a0'}
+          {part}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 /** Lienzo para medir textos (el título de la ficha en el móvil). */
 let measure: CanvasRenderingContext2D | null = null;
 
@@ -372,7 +390,7 @@ export function ProjectCard() {
             </span>
             <span className="pcard__field">
               <Swap k={key} dir={dir} delay={STAGGER.field}>
-                {intro ? site.roleShort.toUpperCase() : exit ? t.card.endField : s.field}
+                <FieldParts text={intro ? site.roleShort.toUpperCase() : exit ? t.card.endField : s.field} />
               </Swap>
             </span>
             <span className="pcard__meta">

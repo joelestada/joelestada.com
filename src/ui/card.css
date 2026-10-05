@@ -122,6 +122,20 @@
   margin-block: -0.25em;
 }
 
+/* Una línea: la disciplina que no cabe baja a la segunda, que no se ve. La primera, si no cabe sola, se corta. */
+.pcard__parts {
+  display: flex;
+  flex-wrap: wrap;
+  height: 1lh;
+  overflow: hidden;
+}
+
+.pcard__parts > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .pcard__meta {
   flex: none;
   color: var(--ink-3);
