@@ -2790,7 +2790,11 @@ html.boot-in .boot-status {
   .rail__link::after {
     display: none;
   }
-  /* Nodos estrechos (caben seis con su tramo), con la zona de toque ensanchada sobre los tramos. */
+  /*
+   * Nodos estrechos (caben seis con su tramo), con la zona de toque ensanchada sobre los tramos: hasta
+   * la mitad del hueco con el vecino (crece un 20 % de lo que la vista pasa de 295 px). Con 9 px fijos,
+   * por debajo de 350 px el nodo de la derecha tapaba el borde del de la izquierda.
+   */
   .node {
     position: relative;
     padding: 6px 2px;
@@ -2798,7 +2802,7 @@ html.boot-in .boot-status {
   .node::before {
     content: '';
     position: absolute;
-    inset: 0 -9px;
+    inset: 0 calc(-1 * clamp(0px, (100vw - 295px) / 10, 12px));
   }
   /* El panel a tamaño de dedo: pestañas, chips y botones de 44 px como mínimo. */
   /* Las cuatro pestañas caben siempre, también a 320 px y en español. */

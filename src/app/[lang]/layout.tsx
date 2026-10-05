@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import type { CSSProperties, ReactNode } from 'react';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
@@ -97,6 +98,8 @@ export default async function RootLayout({ children, params }: { children: React
       <body>
         <LangProvider lang={lang}>{children}</LangProvider>
         <CoverRelease />
+        {/* Métricas de las visitas reales (LCP, INP, CLS) en Vercel, sin cookies: PageSpeed no prueba con GPU. */}
+        <SpeedInsights />
       </body>
     </html>
   );
