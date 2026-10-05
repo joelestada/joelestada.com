@@ -131,7 +131,8 @@ export function LineRail() {
                     setUiHover(null);
                     blur(e);
                   }}
-                  onClick={() => goToStation(s.id)}
+                  // Con una ficha abierta, el nodo abre la de su máquina (como las flechas de la ficha).
+                  onClick={() => goToStation(s.id, { select: selected !== null })}
                   aria-label={`${ui.common.goTo} ${s.number} ${s.title.join(' ')}`}
                   aria-current={active === s.id && !atExit ? 'step' : undefined}
                 >

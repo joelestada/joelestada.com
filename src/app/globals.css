@@ -58,7 +58,7 @@
  * Pantallas compactas (lib/compact.ts): el móvil en vertical y, con poca altura, en horizontal. En
  * horizontal la barra y el pie adelgazan: la altura es lo que falta.
  */
-@media (max-width: 720px), (orientation: landscape) and (max-height: 520px) {
+@media (max-width: 720px), (orientation: portrait) and (max-width: 1024px), (orientation: landscape) and (max-height: 520px) {
   :root {
     --gutter: 8px;
     --bar-h: 46px;

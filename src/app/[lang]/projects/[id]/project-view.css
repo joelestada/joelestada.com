@@ -583,6 +583,17 @@
   outline-offset: 2px;
 }
 
+/* Acercar / verla entera con el teclado: fuera de la vista hasta que recibe el foco. */
+.pj-zoom__bar .pj-zoom__toggle:not(:focus-visible) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 .pj-zoom__scroll {
   flex: 1;
   min-height: 0;

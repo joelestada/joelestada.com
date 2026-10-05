@@ -26,6 +26,7 @@
     "shots:station": "node scripts/station.mjs",
     "gen:plates": "node scripts/plates.mjs",
     "gen:og": "node scripts/og.mjs",
+    "gen:shots": "node scripts/shotsizes.mjs",
     "gen:icons": "node scripts/icons.mjs",
     "indexnow": "node scripts/indexnow.mjs"
   },

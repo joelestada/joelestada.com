@@ -2639,7 +2639,7 @@ html.boot-in .boot-status {
   }
 }
 
-@media (max-width: 720px), (orientation: landscape) and (max-height: 520px) {
+@media (max-width: 720px), (orientation: portrait) and (max-width: 1024px), (orientation: landscape) and (max-height: 520px) {
   .bar {
     grid-template-columns: 1fr auto auto;
   }
@@ -2975,7 +2975,7 @@ html.boot-in .boot-status {
   outline-offset: -7px;
 }
 
-@media (max-width: 720px), (orientation: landscape) and (max-height: 520px) {
+@media (max-width: 720px), (orientation: portrait) and (max-width: 1024px), (orientation: landscape) and (max-height: 520px) {
   .lang-btn {
     padding: 0 12px;
   }

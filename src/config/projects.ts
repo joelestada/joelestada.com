@@ -14,6 +14,8 @@ export type ProjectFigure = {
   /** Tamaño real del archivo, para reservar su hueco. */
   w: number;
   h: number;
+  /** Anchos de las copias reducidas (`<src>-<ancho>.webp`, de scripts/shotsizes.mjs) para el srcset. */
+  widths?: number[];
   /** Grupo de pantallas (la ficha de un valor, la app) y nombre corto de esta (pestaña). */
   group: string;
   label: string;
@@ -79,6 +81,9 @@ export type ProjectContent = {
 /** El contenido tal como se escribe: cada texto puede ir en los dos idiomas. */
 type Src<T> = T extends string ? T | L<T> : T extends readonly (infer E)[] ? Src<E>[] : T extends object ? { [K in keyof T]: Src<T[K]> } : T;
 
+/** Anchos de las copias reducidas de las capturas: los de scripts/shotsizes.mjs. */
+const SHOT_WIDTHS = [960, 1400];
+
 const shot = (
   file: string,
   size: [number, number],
@@ -88,7 +93,7 @@ const shot = (
   alt: L,
   caption: L,
   notes?: Src<NonNullable<ProjectFigure['notes']>>,
-): Src<ProjectFigure> => ({ src: `/projects/ottometrix/${file}.webp`, w: size[0], h: size[1], group, label, title, alt, caption, notes });
+): Src<ProjectFigure> => ({ src: `/projects/ottometrix/${file}.webp`, w: size[0], h: size[1], widths: SHOT_WIDTHS, group, label, title, alt, caption, notes });
 
 /** Capturas de la ficha: sin la barra lateral, a doble resolución. */
 const STOCK: [number, number] = [2480, 1664];

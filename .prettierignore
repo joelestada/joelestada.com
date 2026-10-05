@@ -7,3 +7,7 @@ package-lock.json
 next-env.d.ts
 # Trazado del logotipo de Ottometrix: un solo array de coordenadas, generado.
 src/scene/stations/ottometrixMark.ts
+
+# Auditorías externas (informes locales, no son código)
+audit-*/
+captures/

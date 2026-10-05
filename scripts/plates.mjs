@@ -85,7 +85,8 @@ const encode = (png, size) =>
 for (const lang of langs) {
   const out = `public/plates/${lang}`;
   await mkdir(out, { recursive: true });
-  await page.goto(`${url}/${lang}?hour=14&zoom=1.35`, { waitUntil: 'load' });
+  // Con SwiftShader la portada pasaría a láminas (WebGL por software): `gl=any` dibuja la nave igual.
+  await page.goto(`${url}/${lang}?hour=14&zoom=1.35${angle === 'swiftshader' ? '&gl=any' : ''}`, { waitUntil: 'load' });
   await page.waitForSelector('canvas');
   await page.waitForFunction(() => !/\bboot/.test(document.documentElement.className), null, { timeout: 30000 });
   await page.addStyleTag({

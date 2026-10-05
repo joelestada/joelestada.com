@@ -224,6 +224,8 @@ const UI_SRC = {
     goToScreen: { en: 'Go to screen', es: 'Ir a la pantalla' },
     zoomIn: { en: 'Tap to zoom in', es: 'Toca para acercar' },
     zoomOut: { en: 'Tap to see it whole', es: 'Toca para verla entera' },
+    readClose: { en: 'Zoom in', es: 'Acercar' },
+    readWhole: { en: 'See it whole', es: 'Verla entera' },
     testsInOrder: { en: 'Tests, in order', es: 'Ensayos, en orden' },
     test: { en: 'Test', es: 'Ensayo' },
     onThisPage: { en: 'On this page', es: 'En esta página' },

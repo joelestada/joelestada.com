@@ -14,3 +14,6 @@ captures/
 
 # Borradores de contenido con notas internas (se quedan en el repo privado de archivo)
 docs/contenido/
+
+# Auditorías externas: informes locales
+audit-*/

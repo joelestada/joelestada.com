@@ -31,6 +31,9 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
   const [i, setI] = useState(0);
   const [zoom, setZoom] = useState<number | null>(null);
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const zoomers = useRef<(HTMLButtonElement | null)[]>([]);
+  /** Al cerrar el visor, el foco vuelve al botón de ampliar de la captura en curso (las demás son inert). */
+  const refocus = useRef(false);
   const strip = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
   const n = figures.length;
@@ -43,15 +46,21 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
     return slide.offsetLeft - (tr.clientWidth - slide.offsetWidth) / 2;
   };
 
-  /** Lleva la pista a la captura k (sin tocar el scroll vertical de la página). */
-  const show = (k: number, focus = false) => {
+  /** Lleva la pista a la captura k (sin tocar el scroll vertical de la página); `jump`, sin deslizarla. */
+  const show = (k: number, focus = false, jump = false) => {
     const next = (k + n) % n;
     // A la de al lado se desliza; más lejos, se salta directamente (no pasan todas por delante).
     const far = Math.abs(next - i) > 1;
     setI(next);
-    track.current?.scrollTo({ left: leftOf(next), behavior: reduced() || far ? 'auto' : 'smooth' });
+    track.current?.scrollTo({ left: leftOf(next), behavior: reduced() || far || jump ? 'auto' : 'smooth' });
     if (focus) tabs.current[next]?.focus({ preventScroll: true });
   };
+
+  useEffect(() => {
+    if (zoom !== null || !refocus.current) return;
+    refocus.current = false;
+    zoomers.current[i]?.focus({ preventScroll: true });
+  }, [zoom, i]);
 
   // Al deslizar, la pestaña sigue a la captura que queda encajada (la más cercana al centro).
   useEffect(() => {
@@ -179,7 +188,14 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
             // El panel de la pestaña envuelve a la figura (una figura no puede hacer de panel).
             <div key={x.src} className="pj-slide" id={`pj-screen-${k}`} role="tabpanel" aria-labelledby={`pj-tab-${k}`} inert={k !== i}>
               <figure>
-                <Window f={x} eager={k === 0} onZoom={() => setZoom(k)} />
+                <Window
+                  f={x}
+                  eager={k === 0}
+                  onZoom={() => setZoom(k)}
+                  zoomRef={(el) => {
+                    zoomers.current[k] = el;
+                  }}
+                />
                 <figcaption className="pj-mount__caption">{x.caption}</figcaption>
                 {x.notes && <Notes f={x} />}
               </figure>
@@ -232,8 +248,10 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
           figures={figures}
           start={zoom}
           onClose={(k) => {
+            refocus.current = true;
             setZoom(null);
-            if (k !== i) show(k);
+            // Directa: deslizándose pasaría un momento por la anterior y el foco caería en una captura inert.
+            if (k !== i) show(k, false, true);
           }}
         />
       )}
@@ -255,8 +273,14 @@ function Notes({ f }: { f: ProjectFigure }) {
   );
 }
 
+/** Ancho al que se pinta la captura en la pista (medido: 74 % de la vista en el móvil, 82 % después, hasta 1172 px). */
+const SHOT_SIZES = '(max-width: 600px) 74vw, (max-width: 1428px) 82vw, 1172px';
+
+/** Copias reducidas y original: el móvil y la tableta no descargan la de 2480 px (el visor sí la usa). */
+const srcSet = (f: ProjectFigure) => f.widths && [...f.widths.map((w) => `${f.src.replace(/\.webp$/, `-${w}.webp`)} ${w}w`), `${f.src} ${f.w}w`].join(', ');
+
 /** Ventana de la app: barra de título en tinta, botón de ampliar y la captura con sus globos (tocarla también amplía). */
-function Window({ f, eager, onZoom }: { f: ProjectFigure; eager: boolean; onZoom: () => void }) {
+function Window({ f, eager, onZoom, zoomRef }: { f: ProjectFigure; eager: boolean; onZoom: () => void; zoomRef: (el: HTMLButtonElement | null) => void }) {
   const t = useUi();
   return (
     <div className="pj-win">
@@ -269,14 +293,23 @@ function Window({ f, eager, onZoom }: { f: ProjectFigure; eager: boolean; onZoom
         <span className="pj-win__title" aria-hidden>
           Ottometrix — {f.title}
         </span>
-        <button type="button" className="pj-win__zoom" onClick={onZoom} aria-label={`${t.project.enlarge}: ${f.title}`}>
+        <button type="button" ref={zoomRef} className="pj-win__zoom" onClick={onZoom} aria-label={`${t.project.enlarge}: ${f.title}`}>
           <svg viewBox="0 0 16 16" aria-hidden>
             <path d="M9.5 2.5H13.5V6.5M13.5 2.5L9 7M6.5 13.5H2.5V9.5M2.5 13.5L7 9" />
           </svg>
         </button>
       </div>
       <div className="pj-win__screen" style={{ aspectRatio: `${f.w} / ${f.h}` } as CSSProperties} onClick={onZoom}>
-        <img src={f.src} width={f.w} height={f.h} alt={f.alt} loading={eager ? undefined : 'lazy'} decoding="async" />
+        <img
+          src={f.src}
+          srcSet={srcSet(f)}
+          sizes={f.widths && SHOT_SIZES}
+          width={f.w}
+          height={f.h}
+          alt={f.alt}
+          loading={eager ? undefined : 'lazy'}
+          decoding="async"
+        />
         {f.notes && (
           <div className="pj-callouts" aria-hidden>
             {/* Líneas de referencia: del punto señalado al borde del globo. */}
@@ -377,6 +410,18 @@ function Zoom({ figures, start, onClose }: { figures: ProjectFigure[]; start: nu
         </b>
         <button type="button" onClick={() => onClose(at.current)} autoFocus>
           {t.common.close} <span aria-hidden>×</span>
+        </button>
+        {/* Lo mismo que tocar la captura, para el teclado: solo se ve con el foco. */}
+        <button
+          type="button"
+          className="pj-zoom__toggle"
+          aria-pressed={read}
+          onClick={() => {
+            aim.current = { fx: 0.5, fy: 0 };
+            setRead((v) => !v);
+          }}
+        >
+          {read ? t.project.readWhole : t.project.readClose}
         </button>
       </div>
       <div

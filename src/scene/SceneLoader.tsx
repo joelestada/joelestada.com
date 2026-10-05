@@ -17,6 +17,24 @@ const RESTORE_WAIT = 2000;
 /** Más pérdidas que estas en un minuto: la GPU no da para la nave y la línea pasa a láminas. */
 const MAX_LOSSES = 3;
 
+/**
+ * WebGL por software (sin GPU: SwiftShader, llvmpipe…). Cada fotograma de la nave cuesta cientos de ms
+ * en la CPU y la página deja de responder (PageSpeed, que prueba así, medía 30 s de bloqueo): la línea
+ * pasa a láminas. Con GPU no cambia nada. `?gl=any` dibuja la nave igualmente.
+ */
+const SOFTWARE_GL = /swiftshader|llvmpipe|softpipe|software|basic render/i;
+let software: boolean | undefined;
+function softwareGL() {
+  if (software === undefined) {
+    const gl = document.createElement('canvas').getContext('webgl2');
+    const info = gl?.getExtension('WEBGL_debug_renderer_info');
+    const renderer = gl ? String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER)) : '';
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    software = SOFTWARE_GL.test(renderer) && new URLSearchParams(window.location.search).get('gl') !== 'any';
+  }
+  return software;
+}
+
 /** Si el lienzo falla al crearse o al montar la nave, la portada sigue: la línea pasa a láminas. */
 class SceneBoundary extends Component<{ onError: () => void; children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
@@ -66,11 +84,15 @@ export function SceneLoader() {
     () => false,
   );
   const { flat } = useSnapshot('flat');
+  const soft = client && softwareGL();
   const [mount, setMount] = useState(0);
   const losses = useRef<number[]>([]);
   const pending = useRef<() => void>(() => {});
   useFlatPage(flat);
   useEffect(() => () => pending.current(), []);
+  useEffect(() => {
+    if (soft) setFlat();
+  }, [soft]);
 
   const onLost = useCallback((canvas: HTMLCanvasElement) => {
     const now = performance.now();
@@ -105,7 +127,7 @@ export function SceneLoader() {
     arm();
   }, []);
 
-  if (!client || flat) return null;
+  if (!client || flat || soft) return null;
   return (
     <SceneBoundary onError={setFlat}>
       <FactoryCanvas key={mount} onLost={onLost} />

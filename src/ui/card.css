@@ -732,7 +732,7 @@
  * diagrama del pie, que ya dice en qué parada se está): la cabecera entera es el botón de la ficha,
  * con su celda a la derecha del título. La cámara encuadra la máquina en lo que queda por encima.
  */
-@media (max-width: 720px), (orientation: landscape) and (max-height: 520px) {
+@media (max-width: 720px), (orientation: portrait) and (max-width: 1024px), (orientation: landscape) and (max-height: 520px) {
   .pcard {
     --card-pad: 16px;
     left: calc(var(--gutter) + 1px);

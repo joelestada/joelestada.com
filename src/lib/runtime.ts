@@ -316,12 +316,16 @@ export function resumeScroll() {
 /** Parada pedida con el scroll parado por el arranque (Lenis no la recuerda: ver resumeScroll). */
 let pendingGoal: number | null = null;
 
-/** Lleva la cámara a centrar una estación; con `select` además despliega su ficha. */
+/**
+ * Lleva la cámara a centrar una estación; con `select` además despliega su ficha. Sin `select`, una
+ * ficha abierta de otra máquina se recoge: la cámara y la ficha nunca hablan de proyectos distintos.
+ */
 export function goToStation(id: StationId, { select = false } = {}) {
   if (snapshot.flat) return scrollToSheet(id);
   leaveIntro();
   scrollToProgress(stationProgress(id));
   if (select) setSelected(id);
+  else if (snapshot.selected !== null && snapshot.selected !== id) setSelected(null);
 }
 
 export function goHome() {
