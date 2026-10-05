@@ -2855,13 +2855,18 @@ html.boot-in .boot-status {
   }
 }
 
-/* Móvil en horizontal: el pie es ancho, así que los nodos llevan su nombre. */
+/*
+ * Móvil en horizontal: el pie es ancho, así que los nodos llevan su nombre. Hasta unos 820 px no
+ * caben y se pisaban («ESTRUCTUROTTOMETRIX» a 667 px, un iPhone SE): por debajo, solo el número.
+ */
 @media (orientation: landscape) and (max-height: 520px) {
-  .node__name {
-    display: inline;
-  }
   .rail__line {
     padding: 0 16px;
+  }
+}
+@media (orientation: landscape) and (max-height: 520px) and (min-width: 820px) {
+  .node__name {
+    display: inline;
   }
 }
 

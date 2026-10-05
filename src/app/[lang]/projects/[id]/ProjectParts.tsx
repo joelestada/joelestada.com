@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type KeyboardEvent } from 'react';
 import type { ProjectFigure, ProjectTest } from '@/config/projects';
 import { useUi } from '@/i18n/ui';
 
@@ -12,6 +12,19 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
 
 /** Móvil: la pista enseña la captura siguiente asomando y el visor abre la captura entera. */
 const NARROW = '(max-width: 760px)';
+
+/** Si la vista es la del móvil (en el servidor, la de escritorio). */
+function useNarrow() {
+  return useSyncExternalStore(
+    (on) => {
+      const m = window.matchMedia(NARROW);
+      m.addEventListener('change', on);
+      return () => m.removeEventListener('change', on);
+    },
+    () => window.matchMedia(NARROW).matches,
+    () => false,
+  );
+}
 
 /**
  * Las pantallas del producto: pestañas agrupadas (la ficha de un valor primero) y, debajo, una
@@ -37,6 +50,7 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
   const strip = useRef<HTMLDivElement>(null);
   const track = useRef<HTMLDivElement>(null);
   const n = figures.length;
+  const narrow = useNarrow();
 
   /** Posición de la pista que centra la captura k (en escritorio ocupan la pista entera). */
   const leftOf = (k: number) => {
@@ -183,10 +197,26 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
         <i className="pj-cross pj-cross--tr" aria-hidden />
         <i className="pj-cross pj-cross--bl" aria-hidden />
         <i className="pj-cross pj-cross--br" aria-hidden />
-        <div ref={track} className="pj-tour__track">
+        {/*
+         * En escritorio, pestañas y paneles; en el móvil las pestañas no están (las sustituyen la barra
+         * de tramos y las flechas): la pista se anuncia como un carrusel de pantallas.
+         */}
+        <div
+          ref={track}
+          className="pj-tour__track"
+          {...(narrow ? { role: 'region', 'aria-roledescription': t.project.carousel, 'aria-label': t.project.screens } : {})}
+        >
           {figures.map((x, k) => (
             // El panel de la pestaña envuelve a la figura (una figura no puede hacer de panel).
-            <div key={x.src} className="pj-slide" id={`pj-screen-${k}`} role="tabpanel" aria-labelledby={`pj-tab-${k}`} inert={k !== i}>
+            <div
+              key={x.src}
+              className="pj-slide"
+              id={`pj-screen-${k}`}
+              {...(narrow
+                ? { role: 'group', 'aria-roledescription': t.project.slide, 'aria-label': `${k + 1} / ${n}: ${x.group} — ${x.label}` }
+                : { role: 'tabpanel', 'aria-labelledby': `pj-tab-${k}` })}
+              inert={k !== i}
+            >
               <figure>
                 {/* La en curso y las dos siguientes, ya pedidas: la que asoma no aparece en blanco (Safari solo carga la visible). */}
                 <Window

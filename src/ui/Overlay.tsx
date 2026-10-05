@@ -18,6 +18,7 @@ import {
 } from '@/lib/runtime';
 import { ControlDrawer } from './ControlDrawer';
 import { ExplodeCallouts } from './ExplodeCallouts';
+import { ExplodeHint } from './ExplodeHint';
 import { FlatLine } from './FlatLine';
 import { FpsMeter } from './FpsMeter';
 import { LineRail } from './LineRail';
@@ -192,6 +193,7 @@ export function Overlay() {
       <ProjectCard />
       <StationMarkers />
       <ExplodeCallouts />
+      <ExplodeHint />
       <SheetFrame />
       <LineRail />
       <FpsMeter />
