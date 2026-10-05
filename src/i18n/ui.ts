@@ -229,6 +229,7 @@ const UI_SRC = {
     slide: { en: 'screen', es: 'pantalla' },
     zoomIn: { en: 'Tap to zoom in', es: 'Toca para acercar' },
     zoomOut: { en: 'Tap to see it whole', es: 'Toca para verla entera' },
+    turnToRead: { en: 'or turn your phone to read it', es: 'o gira el móvil para leerla' },
     readClose: { en: 'Zoom in', es: 'Acercar' },
     readWhole: { en: 'See it whole', es: 'Verla entera' },
     testsInOrder: { en: 'Tests, in order', es: 'Ensayos, en orden' },

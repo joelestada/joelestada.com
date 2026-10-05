@@ -24,17 +24,19 @@
    * Escala tipográfica: todo texto usa uno de estos pasos. Abajo van de dos en dos píxeles (la mono
    * en mayúsculas necesita matices pequeños); desde la entradilla, cada paso es ≈1,45 veces el anterior.
    * Los titulares fluidos van con clamp() entre dos pasos, y la portada de hoja con --fs-hero.
+   * En rem (con la letra por defecto, 16 px: 11, 13, 15, 17, 21, 30, 44 y 64 px): quien sube el
+   * tamaño de letra en su navegador lo ve crecer; en px fijos solo servía el zoom.
    */
-  --fs-1: 11px; /* rótulos, controles y datos en mono */
-  --fs-2: 13px; /* texto secundario y datos destacados */
-  --fs-3: 15px; /* texto de interfaz (fichas, notas, pies) */
-  --fs-4: 17px; /* texto de lectura */
-  --fs-5: 21px; /* entradillas y titulillos */
-  --fs-6: 30px; /* títulos de ficha */
-  --fs-7: 44px; /* títulos de panel y de apartado */
-  --fs-8: 64px; /* cifras y titulares grandes */
-  --fs-hero: clamp(var(--fs-8), 11vw, 168px); /* titular de portada de hoja */
-  --fs-hero-2: clamp(var(--fs-7), 8vw, 120px); /* el mismo, cuando ocupa dos líneas junto a la entradilla */
+  --fs-1: 0.6875rem; /* rótulos, controles y datos en mono */
+  --fs-2: 0.8125rem; /* texto secundario y datos destacados */
+  --fs-3: 0.9375rem; /* texto de interfaz (fichas, notas, pies) */
+  --fs-4: 1.0625rem; /* texto de lectura */
+  --fs-5: 1.3125rem; /* entradillas y titulillos */
+  --fs-6: 1.875rem; /* títulos de ficha */
+  --fs-7: 2.75rem; /* títulos de panel y de apartado */
+  --fs-8: 4rem; /* cifras y titulares grandes */
+  --fs-hero: clamp(var(--fs-8), 11vw, 10.5rem); /* titular de portada de hoja */
+  --fs-hero-2: clamp(var(--fs-7), 8vw, 7.5rem); /* el mismo, cuando ocupa dos líneas junto a la entradilla */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
   --ease-sheet: cubic-bezier(0.76, 0, 0.24, 1);

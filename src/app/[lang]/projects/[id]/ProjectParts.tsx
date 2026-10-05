@@ -386,6 +386,13 @@ function Zoom({ figures, start, onClose }: { figures: ProjectFigure[]; start: nu
   const n = figures.length;
   const [k, setK] = useState(start);
   const [read, setRead] = useState(() => !window.matchMedia(NARROW).matches);
+  // Al girar el móvil con el visor abierto: en horizontal, a tamaño de lectura; en vertical, entera.
+  useEffect(() => {
+    const m = window.matchMedia(NARROW);
+    const turn = () => setRead(!m.matches);
+    m.addEventListener('change', turn);
+    return () => m.removeEventListener('change', turn);
+  }, []);
   const at = useRef(k);
   at.current = k;
   const down = useRef<{ x: number; y: number } | null>(null);
@@ -492,7 +499,15 @@ function Zoom({ figures, start, onClose }: { figures: ProjectFigure[]; start: nu
       >
         <img key={f.src} src={f.src} width={f.w} height={f.h} alt={f.alt} />
         <span className="pj-zoom__hint" aria-hidden>
-          {read ? t.project.zoomOut : t.project.zoomIn}
+          {read ? (
+            t.project.zoomOut
+          ) : (
+            <>
+              {t.project.zoomIn}
+              {/* En vertical sobra pantalla: girado, el visor ya abre la captura a tamaño de lectura. */}
+              <small>{t.project.turnToRead}</small>
+            </>
+          )}
         </span>
       </div>
       <div className="pj-zoom__foot">

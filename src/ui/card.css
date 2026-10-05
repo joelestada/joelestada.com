@@ -382,10 +382,32 @@
 /* ---------- Las dos acciones del cuerpo ---------- */
 
 .pcard__buttons {
+  container: pcard-buttons / inline-size;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-top: 16px;
+}
+
+/*
+ * Fila estrecha (a 320 px, en horizontal o con zoom): «EXPLOSIONADA» no cabía entera y se partía
+ * («EXPLOSIONA / DA»). Depende del ancho de la fila, no del de la pantalla: en escritorio mide 310 px.
+ */
+@container pcard-buttons (max-width: 300px) {
+  .pcard__buttons :is(.pcard__explode, .pcard__enter) {
+    gap: 6px;
+    padding-inline: 8px;
+    letter-spacing: 0.05em;
+  }
+  .pcard__prep {
+    letter-spacing: 0.02em;
+  }
+}
+@container pcard-buttons (max-width: 260px) {
+  .pcard__buttons :is(.pcard__explode, .pcard__enter) {
+    padding-inline: 6px;
+    letter-spacing: 0.01em;
+  }
 }
 
 /*
@@ -922,17 +944,6 @@
   .pcard__explode,
   .pcard__enter {
     letter-spacing: 0.1em;
-  }
-  /* A 320–360 px «EXPLOSIONADA» no cabía entera y se partía («EXPLOSIONA / DA»). */
-  @media (max-width: 360px) {
-    .pcard__buttons :is(.pcard__explode, .pcard__enter) {
-      gap: 6px;
-      padding-inline: 8px;
-      letter-spacing: 0.05em;
-    }
-    .pcard__prep {
-      letter-spacing: 0.02em;
-    }
   }
   .pcard__explode {
     gap: 8px;
