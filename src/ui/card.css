@@ -199,6 +199,7 @@
 .pcard__desc,
 .pcard__bom,
 .pcard__tip,
+.pcard__result,
 .pcard__mail,
 .pcard__buttons {
   opacity: 0;
@@ -208,7 +209,7 @@
     transform 0.25s;
 }
 
-.pcard.is-open :is(.pcard__desc, .pcard__bom, .pcard__tip, .pcard__mail, .pcard__buttons) {
+.pcard.is-open :is(.pcard__desc, .pcard__result, .pcard__bom, .pcard__tip, .pcard__mail, .pcard__buttons) {
   opacity: 1;
   transform: none;
   transition:
@@ -234,6 +235,24 @@
   letter-spacing: 0;
   text-transform: none;
   color: var(--ink-2);
+}
+
+/* El resultado del proyecto en una línea, en tinta: la cifra que decide si entrar. */
+.pcard__result {
+  margin: 8px 0 0;
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Proyecto sin hoja todavía: lo dice el propio botón, debajo de «Ver proyecto». */
+.pcard__prep {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--fs-1);
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0.6;
 }
 
 /* El pulsador de hombre muerto: un anillo que se llena, como el que rodea al globo. */
@@ -854,6 +873,23 @@
     overscroll-behavior: contain;
     scrollbar-width: none;
   }
+  /*
+   * Abierta, el interior no recorta: lo que pasa del alto máximo desborda hacia el cuerpo, que es el
+   * que se desplaza (si recortaba el interior, a 320 × 568 los botones quedaban cortados y sin scroll).
+   */
+  .pcard.is-open .pcard__inner {
+    overflow: visible;
+  }
+  /* Queda algo por debajo (o por encima, tras bajar): ese borde se funde. */
+  .pcard__more[data-more] {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  }
+  .pcard__more[data-top] {
+    mask-image: linear-gradient(to bottom, transparent, #000 20px);
+  }
+  .pcard__more[data-more][data-top] {
+    mask-image: linear-gradient(to bottom, transparent, #000 20px, #000 calc(100% - 28px), transparent);
+  }
   .pcard__text {
     margin-top: 10px;
   }
@@ -886,6 +922,17 @@
   .pcard__explode,
   .pcard__enter {
     letter-spacing: 0.1em;
+  }
+  /* A 320–360 px «EXPLOSIONADA» no cabía entera y se partía («EXPLOSIONA / DA»). */
+  @media (max-width: 360px) {
+    .pcard__buttons :is(.pcard__explode, .pcard__enter) {
+      gap: 6px;
+      padding-inline: 8px;
+      letter-spacing: 0.05em;
+    }
+    .pcard__prep {
+      letter-spacing: 0.02em;
+    }
   }
   .pcard__explode {
     gap: 8px;

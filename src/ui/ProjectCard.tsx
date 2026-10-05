@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { partNames } from '@/config/parts';
+import { hasSheet, projectResult } from '@/config/projects';
 import { SITE, useSite } from '@/config/site';
 import { STATIONS, useStationById, useStations, type StationId } from '@/config/stations';
 import { useHref, useLang } from '@/i18n/LangProvider';
@@ -233,8 +234,32 @@ export function ProjectCard() {
   const key = intro ? 'intro' : exit ? 'exit' : id;
   const stop = intro ? 'intro' : exit ? 'exit' : 'station';
   const href = toHref(`/projects/${id}`);
+  const result = projectResult(id, useLang());
   const ref = useRef<HTMLElement>(null);
+  const more = useRef<HTMLDivElement>(null);
   const hovering = useRef(false);
+
+  // En una pantalla baja el cuerpo se desplaza dentro de la ficha: si queda algo por debajo, el
+  // borde inferior se funde (sin pista, nadie sabía que los botones seguían más abajo); tras bajar, el superior.
+  useEffect(() => {
+    const el = more.current;
+    if (!el) return;
+    const mark = () => {
+      el.toggleAttribute('data-more', el.scrollHeight - el.clientHeight - el.scrollTop > 2);
+      el.toggleAttribute('data-top', el.scrollTop > 2);
+    };
+    mark();
+    const ro = new ResizeObserver(mark);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    el.addEventListener('scroll', mark, { passive: true });
+    el.addEventListener('transitionend', mark);
+    return () => {
+      ro.disconnect();
+      el.removeEventListener('scroll', mark);
+      el.removeEventListener('transitionend', mark);
+    };
+  }, []);
   const router = useRouter();
 
   // Sentido del cambio: hacia delante en la línea, el texto sube; hacia atrás, baja.
@@ -281,7 +306,14 @@ export function ProjectCard() {
       {/* En la vista explosionada, la descripción deja sitio a la lista de piezas (como en un plano de conjunto). */}
       <Morph className="pcard__text">
         <Swap mode="fade" k={`${id}-${exploded === id ? 'bom' : 'desc'}`} dir={dir}>
-          {exploded === id ? <PartList id={id} /> : <p className="pcard__desc">{s.description}</p>}
+          {exploded === id ? (
+            <PartList id={id} />
+          ) : (
+            <>
+              <p className="pcard__desc">{s.description}</p>
+              {result && <p className="pcard__result">{result}</p>}
+            </>
+          )}
         </Swap>
       </Morph>
       {/* El pulsador de hombre muerto: sin este aviso nadie lo encuentra. */}
@@ -298,7 +330,11 @@ export function ProjectCard() {
           <span>{exploded === id ? t.card.assemble : t.card.explode}</span>
         </button>
         <a className="pcard__enter" href={href} onClick={enter}>
-          <span>{t.card.enter}</span>
+          <span>
+            {t.card.enter}
+            {/* Sin hoja escrita todavía: que nadie entre esperando el caso completo. */}
+            {!hasSheet(id) && <small className="pcard__prep">{t.card.inPrep}</small>}
+          </span>
           <span className="pcard__arrow" aria-hidden>
             →
           </span>
@@ -371,7 +407,7 @@ export function ProjectCard() {
           </button>
         </div>
 
-        <div className="pcard__more" inert={!expanded}>
+        <div ref={more} className="pcard__more" inert={!expanded}>
           <div className="pcard__inner">
             {/* Entre la última máquina y el final de la línea cambia todo el cuerpo: se funde entero. */}
             <Swap mode="fade" k={stop} dir={dir}>

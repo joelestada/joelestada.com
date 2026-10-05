@@ -58,6 +58,8 @@ export type ProjectContent = {
   status: string;
   /** Llamada al final de la página: un enlace de correo con asunto y, si hace falta, una frase. */
   cta: { label: string; subject: string; note?: string };
+  /** El resultado en una línea, para la ficha de la portada. */
+  result?: string;
   lead: string;
   tagline?: string;
   stats: ProjectStat[];
@@ -105,6 +107,7 @@ const PROJECTS_SRC: Partial<Record<StationId, Src<ProjectContent>>> = {
     role: { en: 'Sole founder — engine, data, validation and product', es: 'Fundador en solitario: motor, datos, validación y producto' },
     // El punto va pegado a lo anterior (espacio duro): en una columna estrecha no abre la segunda línea.
     status: { en: 'In development\u00a0· private', es: 'En desarrollo\u00a0· privado' },
+    result: { en: 'IC +0.062 in sample · +0.007 out', es: 'IC +0,062 en muestra · +0,007 fuera' },
     cta: {
       label: { en: 'REQUEST A DEMO', es: 'PEDIR UNA DEMO' },
       subject: { en: 'Ottometrix demo', es: 'Demo de Ottometrix' },
@@ -534,6 +537,15 @@ const PROJECTS_SRC: Partial<Record<StationId, Src<ProjectContent>>> = {
     ],
   },
 };
+
+/** Si el proyecto tiene ya su hoja escrita (si no, la ficha lo marca «en preparación»). */
+export const hasSheet = (id: StationId) => id in PROJECTS_SRC;
+
+/** El resultado en una línea de un proyecto, para su ficha en la portada. */
+export function projectResult(id: StationId, lang: Lang): string | undefined {
+  const r = PROJECTS_SRC[id]?.result;
+  return r === undefined ? undefined : (localize(r, lang) as string);
+}
 
 /** El contenido de un proyecto en un idioma (o nada, si aún no tiene hoja). */
 export function projectIn(id: StationId, lang: Lang): ProjectContent | undefined {

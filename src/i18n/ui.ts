@@ -111,6 +111,7 @@ const UI_SRC = {
   card: {
     startLine: { en: 'START THE LINE', es: 'EMPEZAR LA LÍNEA' },
     holdTip: { en: 'Press and hold: full power', es: 'Mantén pulsado: plena potencia' },
+    inPrep: { en: 'In preparation', es: 'En preparación' },
     explode: { en: 'EXPLODED VIEW', es: 'VISTA EXPLOSIONADA' },
     assemble: { en: 'ASSEMBLE', es: 'MONTAR' },
     enter: { en: 'ENTER PROJECT', es: 'VER PROYECTO' },
