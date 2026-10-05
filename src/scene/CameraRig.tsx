@@ -20,7 +20,6 @@ import {
   updateActive,
   updateExit,
 } from '@/lib/runtime';
-import { explode } from './explode';
 import { createFraming } from './framing';
 import { frameClock } from './frameClock';
 
@@ -43,7 +42,16 @@ const DEV_ZOOM =
 const MAX_STEP_MS = 34;
 
 /** Encuadre del móvil: aire entre la máquina y el borde del hueco libre (px) y rapidez con que lo sigue (1/s). */
-const FRAME_MARGIN = 14;
+const FRAME_MARGIN = 18;
+/**
+ * Móvil en vertical: la caja que ha de caber entre la barra y la ficha desplegada (m, la de una
+ * máquina media con su despiece) y lo que ocupan barra, pie y ficha desplegada (px). En una pantalla
+ * baja (un iPhone con las barras de Safari) la cámara se aleja hasta que cabe, pero no más que antes
+ * de acercarla (FIT_MIN_WIDTH, m a lo ancho).
+ */
+const FIT_BOX = 6.8;
+const FIT_UI = 400;
+const FIT_MIN_WIDTH = 8.4;
 const FRAME_RATE = 11;
 /** Tras el último evento de cambio de tamaño, lo que se mantiene el avance guardado (ms). */
 const RESIZE_SETTLE_MS = 400;
@@ -109,11 +117,11 @@ export function CameraRig() {
       let dr = 0;
       let du = -lift.current;
       if (compact.current && v.ready) {
-        // Móvil: la caja de la parada (con la presentación y el despiece mezclados) en el centro del
-        // hueco libre. Si no cabe de alto, manda su parte de arriba: el despiece crece hacia arriba.
+        // Móvil: la caja de la parada (que ya cuenta con el despiece) en el centro del hueco libre.
+        // Si no cabe de alto, manda su parte de arriba (nunca bajo la barra) y lo que sobra es suelo
+        // de delante, bajo la ficha.
         const k = cam.zoom;
-        const ex = explode.station && explode.end > 0 ? Math.min(1, explode.t / explode.end) : 0;
-        const s = framing(x, v.intro, explode.station, ex * ex * (3 - 2 * ex));
+        const s = framing(x, v.intro);
         const top = v.t + FRAME_MARGIN;
         const tall = (s.u1 - s.u0) * k > v.b - FRAME_MARGIN - top;
         const cy = tall ? top + ((s.u1 - s.u0) * k) / 2 : (v.t + v.b) / 2;
@@ -174,7 +182,12 @@ export function CameraRig() {
     portrait.current = aspect < 1;
     shift.current = aspect < 1 ? CAMERA.portraitShiftX : 0;
     // Móvil en horizontal: con la anchura mínima del escritorio las máquinas quedaban diminutas.
-    const viewHeight = (isSide(size.width, size.height) ? CAMERA.shortViewHeight : Math.max(CAMERA.viewHeight, minWidth / aspect)) / DEV_ZOOM;
+    let viewHeight = (isSide(size.width, size.height) ? CAMERA.shortViewHeight : Math.max(CAMERA.viewHeight, minWidth / aspect)) / DEV_ZOOM;
+    // Móvil en vertical y bajo: la máquina con su despiece ha de caber sobre la ficha desplegada.
+    if (aspect < 1 && isCompact(size.width, size.height) && DEV_ZOOM === 1) {
+      const fit = (size.height - FIT_UI) / FIT_BOX;
+      viewHeight = Math.min(Math.max(viewHeight, size.height / fit), FIT_MIN_WIDTH / aspect);
+    }
     lift.current = aspect < 1 ? CAMERA.portraitLift * viewHeight : 0;
     compact.current = isCompact(size.width, size.height);
     // Con otro tamaño, el hueco libre se toma tal cual (sin seguirlo desde el de antes).

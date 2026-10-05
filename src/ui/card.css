@@ -943,6 +943,17 @@
 }
 
 /*
+ * Móvil bajo (un iPhone con las barras de Safari, uno pequeño): el cuerpo desplegado no pasa del alto
+ * con el que cuenta el encuadre (useViewArea): la máquina sigue a la vista y lo que sobre del texto
+ * se desplaza dentro de la ficha.
+ */
+@media (max-width: 720px) and (max-height: 700px) {
+  .pcard__more {
+    max-height: 200px;
+  }
+}
+
+/*
  * Móvil en horizontal: la ficha va a la izquierda, sobre el pie, y crece hacia arriba hasta la barra.
  * La nave queda a su derecha, entera de alto.
  */

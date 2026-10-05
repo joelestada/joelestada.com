@@ -13,6 +13,9 @@ import { cardAnchor } from './cardAnchor';
  * También mide lo que tapa por abajo la barra del navegador (la de Safari en el iPhone, que puede ir
  * sobre la página): `--vv-b`, en el que se apoyan el pie y la ficha. Con zoom de pellizco no se toca.
  */
+/** Alto del cuerpo de la ficha desplegada en el móvil (px): descripción de cuatro líneas, aviso y botones. */
+const CARD_BODY = 180;
+
 export function useViewArea() {
   useEffect(() => {
     const compact = window.matchMedia(COMPACT_QUERY);
@@ -46,8 +49,16 @@ export function useViewArea() {
       const t = bar.offsetTop + bar.offsetHeight;
       const l = rail.offsetLeft;
       const r = rail.offsetLeft + rail.offsetWidth;
-      // En horizontal la ficha va a la izquierda; en vertical, a lo ancho sobre el pie.
-      set(side.matches ? { l: card.offsetLeft + card.offsetWidth, t, r, b: rail.offsetTop } : { l, t, r, b: card.offsetTop });
+      if (side.matches) {
+        // En horizontal la ficha va a la izquierda: crezca o no, el hueco es lo que queda a su derecha.
+        set({ l: card.offsetLeft + card.offsetWidth, t, r, b: rail.offsetTop });
+        return;
+      }
+      // En vertical va a lo ancho sobre el pie, y el hueco acaba donde acabaría desplegada: la cámara
+      // no se mueve al abrirla ni al despiezar. Lo fijo de la ficha (cabecera y título) más su cuerpo.
+      const more = card.querySelector<HTMLElement>('.pcard__more');
+      const head = card.offsetHeight - (more?.offsetHeight ?? 0);
+      set({ l, t, r, b: Math.round(card.offsetTop + card.offsetHeight - head - CARD_BODY) });
     };
     const soon = () => {
       if (!raf) raf = requestAnimationFrame(measure);
