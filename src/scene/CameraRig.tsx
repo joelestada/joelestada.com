@@ -262,7 +262,8 @@ export function CameraRig() {
       invalidate();
     };
     window.addEventListener('resize', onResize);
-    const restore = requestAnimationFrame(restoreView);
+    const hash = location.hash;
+    const restore = requestAnimationFrame(() => restoreView(hash));
     const unlink = linkHash();
     invalidate();
     return () => {

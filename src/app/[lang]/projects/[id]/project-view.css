@@ -1543,10 +1543,20 @@ html.pj-zooming body {
     text-transform: uppercase;
     color: var(--ink-3);
   }
-  .pj-tour__head span {
+  /* En una línea siempre: si el grupo no cabe se corta él (con dos líneas, la captura bajaba). */
+  .pj-tour__head > span {
+    display: flex;
+    gap: 0.6ch;
     min-width: 0;
+    white-space: nowrap;
+  }
+  .pj-tour__group {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .pj-tour__head b {
+    flex: none;
     font-weight: 600;
     color: var(--ink);
   }
@@ -1629,16 +1639,42 @@ html.pj-zooming body {
     outline-offset: -8px;
   }
   .pj-tour__info {
-    display: block;
+    display: grid;
     padding: 16px var(--pad) 0;
+  }
+  .pj-tour__text {
+    grid-area: 1 / 1;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity 0.25s var(--ease-out),
+      visibility 0s 0.25s;
+  }
+  .pj-tour__text.is-on {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.4s var(--ease-out) 0.1s;
   }
   .pj-tour__info .pj-mount__caption {
     margin: 0;
     font-size: var(--fs-3);
-    animation: pj-fade 0.4s var(--ease-out) both;
   }
+  /* Las notas, de dos en dos y más juntas: su alto es el que reserva el bloque para todas. */
   .pj-tour__info .pj-notes {
-    animation: pj-fade 0.4s var(--ease-out) both 0.05s;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 16px;
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+  .pj-tour__info .pj-notes li {
+    grid-template-columns: 22px 1fr;
+    gap: 8px;
+    font-size: var(--fs-2);
+    line-height: 1.4;
+  }
+  .pj-tour__info .pj-notes b {
+    width: 20px;
+    height: 20px;
   }
   .pj-content {
     gap: 48px;

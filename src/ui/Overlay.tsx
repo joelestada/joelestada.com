@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { STATIONS } from '@/config/stations';
 import {
   closeMenu,
@@ -106,13 +106,18 @@ function useShortcuts() {
  * cuando entra la interfaz tras el arranque. El parámetro sale de la dirección.
  */
 function useArrival() {
+  // Se lee una vez: en modo estricto el efecto se repite y el parámetro ya no está en la dirección.
+  const asked = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    const url = new URL(window.location.href);
-    const panel = url.searchParams.get('panel');
-    if (panel !== null) {
-      url.searchParams.delete('panel');
-      history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+    if (asked.current === undefined) {
+      const url = new URL(window.location.href);
+      asked.current = url.searchParams.get('panel');
+      if (asked.current !== null) {
+        url.searchParams.delete('panel');
+        history.replaceState(history.state, '', url.pathname + url.search + url.hash);
+      }
     }
+    const panel = asked.current;
     const open = isSection(panel) ? () => openMenu(panel) : null;
     let raf = 0;
     let timer = 0;

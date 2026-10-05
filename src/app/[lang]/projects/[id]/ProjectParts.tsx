@@ -171,7 +171,7 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
       {/* Móvil: el grupo y la pantalla en curso, con el contador. */}
       <p className="pj-tour__head" aria-live="polite">
         <span>
-          {f.group} <b>— {f.label}</b>
+          <span className="pj-tour__group">{f.group}</span> <b>— {f.label}</b>
         </span>
         <em>
           {pad(i + 1)} / {pad(n)}
@@ -188,9 +188,10 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
             // El panel de la pestaña envuelve a la figura (una figura no puede hacer de panel).
             <div key={x.src} className="pj-slide" id={`pj-screen-${k}`} role="tabpanel" aria-labelledby={`pj-tab-${k}`} inert={k !== i}>
               <figure>
+                {/* La en curso y las dos siguientes, ya pedidas: la que asoma no aparece en blanco (Safari solo carga la visible). */}
                 <Window
                   f={x}
-                  eager={k === 0}
+                  eager={k <= i + 2}
                   onZoom={() => setZoom(k)}
                   zoomRef={(el) => {
                     zoomers.current[k] = el;
@@ -235,12 +236,18 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
         </div>
       </div>
 
-      {/* Móvil: el texto de la captura en curso, fuera de la pista (lo que cambia de alto va abajo). */}
+      {/*
+       * Móvil: el texto de la captura en curso, fuera de la pista. Están todos, uno encima de otro: el
+       * bloque mide lo que el más alto y la página no sube ni baja al pasar; el nuevo entra fundiéndose
+       * sobre el anterior (al volver a montarlo partía de transparente y parpadeaba).
+       */}
       <div className="pj-tour__info">
-        <p key={f.src} className="pj-mount__caption">
-          {f.caption}
-        </p>
-        {f.notes && <Notes key={`${f.src}-notes`} f={f} />}
+        {figures.map((x, k) => (
+          <div key={x.src} className={`pj-tour__text${k === i ? ' is-on' : ''}`} aria-hidden={k !== i}>
+            <p className="pj-mount__caption">{x.caption}</p>
+            {x.notes && <Notes f={x} />}
+          </div>
+        ))}
       </div>
 
       {zoom !== null && (

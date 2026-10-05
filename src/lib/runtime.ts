@@ -394,16 +394,18 @@ export function rememberReturn(id: StationId) {
 
 /**
  * Vista inicial, sin animación: si se vuelve de un proyecto, su estación con la ficha abierta; si
- * no, lo que nombre el fragmento de la URL (un enlace compartido a una estación o al contacto).
+ * no, lo que nombre el fragmento de la URL (un enlace compartido a una estación o al contacto). El
+ * fragmento se toma al montar: linkHash reescribe la dirección con el primer cambio de estado, que en
+ * táctil llega antes de este frame y lo borraba.
  */
-export function restoreView() {
+export function restoreView(hash = location.hash) {
   let id: string | null = null;
   try {
     id = sessionStorage.getItem(RETURN_KEY);
     sessionStorage.removeItem(RETURN_KEY);
   } catch {}
   if (isStationId(id)) goToHash(id, true);
-  else goToHash(location.hash, true);
+  else goToHash(hash, true);
 }
 
 /* ---------- Enlace propio de cada estación ---------- */

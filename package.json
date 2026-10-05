@@ -17,6 +17,7 @@
     "check:type-scale": "node scripts/typescale.mjs --check",
     "check:a11y": "node scripts/a11y.mjs",
     "check:repaint": "node scripts/repaint.mjs",
+    "check:nav": "node scripts/nav.mjs",
     "measure:perf": "node scripts/perf.mjs",
     "measure:load": "node scripts/load.mjs",
     "measure:type": "node scripts/typescale.mjs",
