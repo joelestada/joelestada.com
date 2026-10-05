@@ -37,7 +37,16 @@ export default async function Page({ params }: { params: Promise<{ lang: string 
     '@context': 'https://schema.org',
     '@graph': [
       person,
-      { '@type': 'WebSite', '@id': `${SITE_URL}/#website`, name: SITE.person, url: SITE_URL, inLanguage: lang, author: { '@id': person['@id'] } },
+      {
+        '@type': 'WebSite',
+        '@id': `${SITE_URL}/#website`,
+        // El nombre que Google pone sobre el resultado en lugar del dominio (lo lee de la portada: la raíz).
+        name: SITE.person,
+        alternateName: [t.meta.siteAlt, 'joelestada.com'],
+        url: `${SITE_URL}/`,
+        inLanguage: lang,
+        author: { '@id': person['@id'] },
+      },
     ],
   };
   return (

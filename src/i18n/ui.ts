@@ -27,6 +27,8 @@ const UI_SRC = {
       es: (title: string, n: string) => `${title}, estación ${n} de la línea`,
     },
     sheets: { en: 'Project sheets', es: 'Hojas de los proyectos' },
+    /** Otro nombre del sitio para Google (el principal es el de Joel). */
+    siteAlt: { en: 'Joel Estada Portfolio', es: 'Portafolio de Joel Estada' },
   },
 
   /** Lo que se repite en toda la web. */

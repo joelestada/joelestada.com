@@ -1,6 +1,7 @@
 /**
- * Idiomas de la web. Cada página vive en /en/… y /es/…; la raíz y cualquier dirección sin idioma
- * llevan al de la cookie (elegido con el botón ES/EN) o, si no hay, al del navegador (proxy.ts).
+ * Idiomas de la web. Cada página vive en /en/… y /es/…; cualquier dirección sin idioma lleva al de la
+ * cookie (elegido con el botón ES/EN) o, si no hay, al del navegador. La raíz, en inglés, sirve la
+ * portada ahí mismo (proxy.ts).
  */
 export const LANGS = ['en', 'es'] as const;
 export type Lang = (typeof LANGS)[number];
@@ -29,8 +30,8 @@ export function stripLang(pathname: string) {
   return m ? pathname.slice(m[0].length) || '/' : pathname;
 }
 
-/** La portada de un idioma (/en, /es), con o sin barra final. */
-export const isHomePath = (pathname: string) => /^\/(en|es)\/?$/.test(pathname);
+/** La portada: la de un idioma (/en, /es), con o sin barra final, o la raíz (la sirve en inglés: proxy.ts). */
+export const isHomePath = (pathname: string) => /^\/((en|es)\/?)?$/.test(pathname);
 
 /**
  * Idioma de la página ya cargada, para el código que no es de React (la nave, sus rótulos pintados).
