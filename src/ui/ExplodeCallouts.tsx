@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { partList } from '@/config/parts';
 import type { StationId } from '@/config/stations';
 import { onFrame, runtime } from '@/lib/runtime';
@@ -14,10 +14,29 @@ const REACH = 30;
 const GAP = 2 * R + 5;
 
 let layer: SVGSVGElement | null = null;
+/** Pieza destacada: la del globo tocado o la de la lista de piezas de la ficha (0, ninguna). */
+let hot = 0;
+const hotListeners = new Set<() => void>();
+const subscribeHot = (l: () => void) => {
+  hotListeners.add(l);
+  return () => void hotListeners.delete(l);
+};
 
-/** Destaca el globo de una pieza (lo pide la lista de piezas de la ficha); 0 para ninguno. */
+/** Destaca el globo de una pieza (y su fila en la lista de piezas de la ficha); 0 para ninguno. */
 export function setHotPart(n: number) {
+  if (n === hot) return;
+  hot = n;
   layer?.querySelectorAll<SVGGElement>('.xp').forEach((g) => g.classList.toggle('is-hot', Number(g.dataset.n) === n));
+  hotListeners.forEach((l) => l());
+}
+
+/** La pieza destacada, para la lista de piezas de la ficha. */
+export function useHotPart() {
+  return useSyncExternalStore(
+    subscribeHot,
+    () => hot,
+    () => 0,
+  );
 }
 
 const clamp01 = (k: number) => Math.min(1, Math.max(0, k));
@@ -40,6 +59,11 @@ export function ExplodeCallouts() {
       layer = null;
     };
   }, []);
+
+  // Otra máquina, otra lista: ninguna pieza destacada.
+  useEffect(() => {
+    setHotPart(0);
+  }, [shown]);
 
   useEffect(() => {
     const root = svg.current;
@@ -119,6 +143,8 @@ export function ExplodeCallouts() {
         (g.children[3] as SVGGElement).setAttribute('transform', `translate(${bx.toFixed(1)} ${by.toFixed(1)})`);
         const show = moves ? clamp01((e.k - 0.72) / 0.28) : settled;
         for (const k of [1, 2, 3]) (g.children[k] as SVGElement).style.opacity = String(show);
+        // El globo se puede tocar cuando ya está en su sitio.
+        (g.children[3] as SVGElement).style.pointerEvents = show > 0.5 ? 'auto' : 'none';
       });
     };
     update();
@@ -126,14 +152,17 @@ export function ExplodeCallouts() {
   }, [shown]);
 
   return (
-    <svg ref={svg} className="xplode" aria-hidden style={{ visibility: 'hidden' }}>
+    // Tocar un globo destaca su pieza en la lista de la ficha (y otra vez, lo apaga). Es interfaz: un
+    // toque aquí no recoge la ficha (data-ui). La lista de la ficha es la versión accesible.
+    <svg ref={svg} className="xplode" aria-hidden data-ui style={{ visibility: 'hidden' }}>
       {shown &&
         partList(shown).map((p) => (
           <g key={`${shown}-${p.n}`} className="xp" data-n={p.n}>
             <line className="xp__path" />
             <line className="xp__leader" />
             <circle className="xp__dot" r={2} />
-            <g className="xp__tag">
+            <g className="xp__tag" onClick={() => setHotPart(hot === p.n ? 0 : p.n)}>
+              <circle className="xp__hit" r={R + 9} />
               <circle r={R} />
               <text dy="0.36em">{p.n}</text>
             </g>

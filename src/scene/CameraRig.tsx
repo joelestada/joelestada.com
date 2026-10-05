@@ -5,6 +5,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import Lenis from 'lenis';
 import { CAMERA, SCROLL, cameraDirection } from '@/config/layout';
+import { isCompact, isSide } from '@/lib/compact';
 import { LOCK_CLASS, TOUCH_CLASS, TOUCH_QUERY } from '@/lib/touch';
 import {
   cameraXAt,
@@ -19,6 +20,8 @@ import {
   updateActive,
   updateExit,
 } from '@/lib/runtime';
+import { explode } from './explode';
+import { createFraming } from './framing';
 import { frameClock } from './frameClock';
 
 /**
@@ -38,6 +41,13 @@ const DEV_ZOOM =
 
 /** Paso máximo del reloj de Lenis: tras una pausa sin frames no salta de golpe al destino. */
 const MAX_STEP_MS = 34;
+
+/** Encuadre del móvil: aire entre la máquina y el borde del hueco libre (px) y rapidez con que lo sigue (1/s). */
+const FRAME_MARGIN = 14;
+const FRAME_RATE = 11;
+/** Tras el último evento de cambio de tamaño, lo que se mantiene el avance guardado (ms). */
+const RESIZE_SETTLE_MS = 400;
+const REDUCED = typeof window !== 'undefined' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
 
 /**
  * Cámara ortográfica fija en ángulo que recorre la línea con el scroll.
@@ -81,19 +91,44 @@ export function CameraRig() {
   /** Desplazamiento vertical del encuadre (m, en el plano de la cámara): en móvil la línea sube. */
   const lift = useRef(0);
   const portrait = useRef(false);
+  /**
+   * Encuadre de las pantallas compactas (scene/framing): el hueco libre que sigue la cámara, ya
+   * suavizado, y la presentación (0..1). Sin hueco medido, el encuadre de siempre.
+   */
+  const compact = useRef(false);
+  const framing = useMemo(() => createFraming(basis.right, basis.up), [basis]);
+  const view = useRef({ ready: false, l: 0, t: 0, r: 0, b: 0, intro: 1, at: 0 });
   const place = useMemo(() => {
     const target = new THREE.Vector3();
     return (x: number) => {
       const cam = camRef.current;
       if (!cam) return;
       const px = 1 / (cam.zoom * gl.getPixelRatio());
-      // En vertical, al principio del recorrido el encuadre se corre hacia la persiana (el rótulo
-      // JOEL entero) y vuelve a su sitio poco a poco: sin saltos, porque depende solo de x.
-      const k = Math.min(1, Math.max(0, (x - CAMERA.startX) / CAMERA.portraitStartSpan));
-      const start = portrait.current ? CAMERA.portraitStartShiftX * (1 - k * k * (3 - 2 * k)) : 0;
-      target.set(x + shift.current + start, CAMERA.targetY, CAMERA.targetZ);
-      const exactR = target.dot(basis.right) / px;
-      const exactU = (target.dot(basis.up) - lift.current) / px;
+      const v = view.current;
+      // Desplazamiento del encuadre en el plano de la cámara (m): a la derecha y hacia arriba.
+      let dr = 0;
+      let du = -lift.current;
+      if (compact.current && v.ready) {
+        // Móvil: la caja de la parada (con la presentación y el despiece mezclados) en el centro del
+        // hueco libre. Si no cabe de alto, manda su parte de arriba: el despiece crece hacia arriba.
+        const k = cam.zoom;
+        const ex = explode.station && explode.end > 0 ? Math.min(1, explode.t / explode.end) : 0;
+        const s = framing(x, v.intro, explode.station, ex * ex * (3 - 2 * ex));
+        const top = v.t + FRAME_MARGIN;
+        const tall = (s.u1 - s.u0) * k > v.b - FRAME_MARGIN - top;
+        const cy = tall ? top + ((s.u1 - s.u0) * k) / 2 : (v.t + v.b) / 2;
+        dr = (s.r0 + s.r1) / 2 - ((v.l + v.r) / 2 - size.width / 2) / k;
+        du = (s.u0 + s.u1) / 2 - (size.height / 2 - cy) / k;
+        target.set(x, CAMERA.targetY, CAMERA.targetZ);
+      } else {
+        // En vertical, al principio del recorrido el encuadre se corre hacia la persiana (el rótulo
+        // JOEL entero) y vuelve a su sitio poco a poco: sin saltos, porque depende solo de x.
+        const k = Math.min(1, Math.max(0, (x - CAMERA.startX) / CAMERA.portraitStartSpan));
+        const start = portrait.current ? CAMERA.portraitStartShiftX * (1 - k * k * (3 - 2 * k)) : 0;
+        target.set(x + shift.current + start, CAMERA.targetY, CAMERA.targetZ);
+      }
+      const exactR = (target.dot(basis.right) + dr) / px;
+      const exactU = (target.dot(basis.up) + du) / px;
       const r = Math.round(exactR);
       // La cámara viaja a lo largo de X, que en pantalla es una diagonal. Redondear cada eje por
       // su cuenta hacía que a poca velocidad un frame avanzara en horizontal y otro en vertical (un
@@ -111,7 +146,7 @@ export function CameraRig() {
       // Sin redondear: lo que viaja con la cámara se ajusta respecto a esto y no tiembla.
       cam.userData.pixelExact = [exactR, exactU];
     };
-  }, [basis, gl]);
+  }, [basis, gl, framing, size.width, size.height]);
 
   // Cámara por defecto del lienzo mientras la escena está montada.
   useLayoutEffect(() => {
@@ -138,8 +173,12 @@ export function CameraRig() {
     const minWidth = aspect < 1 ? CAMERA.minViewWidthPortrait : CAMERA.minViewWidth;
     portrait.current = aspect < 1;
     shift.current = aspect < 1 ? CAMERA.portraitShiftX : 0;
-    const viewHeight = Math.max(CAMERA.viewHeight, minWidth / aspect) / DEV_ZOOM;
+    // Móvil en horizontal: con la anchura mínima del escritorio las máquinas quedaban diminutas.
+    const viewHeight = (isSide(size.width, size.height) ? CAMERA.shortViewHeight : Math.max(CAMERA.viewHeight, minWidth / aspect)) / DEV_ZOOM;
     lift.current = aspect < 1 ? CAMERA.portraitLift * viewHeight : 0;
+    compact.current = isCompact(size.width, size.height);
+    // Con otro tamaño, el hueco libre se toma tal cual (sin seguirlo desde el de antes).
+    view.current.ready = false;
     cam.zoom = size.height / viewHeight;
     cam.updateProjectionMatrix();
     place(runtime.cameraX);
@@ -186,8 +225,11 @@ export function CameraRig() {
     runtime.invalidate = () => invalidate();
     const wake = () => invalidate();
     // Un gesto de scroll del usuario recoge la ficha abierta (los desplazamientos programados no).
-    lenis.on('virtual-scroll', ({ deltaX, deltaY }: { deltaX: number; deltaY: number }) => {
+    // Lo que se desliza por su cuenta (la cinta de piezas, el panel) no recorre la línea ni recoge nada.
+    const own = (n: EventTarget) => n instanceof HTMLElement && (n.hasAttribute('data-lenis-prevent') || n.hasAttribute('data-lenis-prevent-touch'));
+    lenis.on('virtual-scroll', ({ deltaX, deltaY, event }: { deltaX: number; deltaY: number; event: Event }) => {
       wake();
+      if (event.composedPath().some(own)) return;
       const delta = touch ? deltaX : deltaY;
       if (Math.abs(delta) > 2) {
         if (getSnapshot().selected) setSelected(null);
@@ -196,11 +238,23 @@ export function CameraRig() {
     });
     lenis.on('scroll', wake);
     window.addEventListener('scroll', wake, { passive: true });
+    // La pista mide 800vh: al girar el móvil (o cambiar el alto de la ventana) cambia su recorrido, y
+    // el navegador recoloca su scroll nativo, con el que Lenis se vuelve a sincronizar. La cámara
+    // saltaba a otra máquina con la ficha de la anterior abierta. El avance se guarda al empezar el
+    // cambio de tamaño (antes de esa recolocación) y se mantiene hasta que se asienta.
+    const onResize = () => {
+      const h = held.current;
+      if (h.progress === null) h.progress = runtime.progress;
+      h.at = performance.now();
+      invalidate();
+    };
+    window.addEventListener('resize', onResize);
     const restore = requestAnimationFrame(restoreView);
     const unlink = linkHash();
     invalidate();
     return () => {
       cancelAnimationFrame(restore);
+      window.removeEventListener('resize', onResize);
       unlink();
       window.removeEventListener('scroll', wake);
       // Al salir de la portada (a un proyecto o al CV), esas páginas vuelven a desplazarse.
@@ -211,10 +265,66 @@ export function CameraRig() {
     };
   }, [invalidate]);
 
+  /** Avance guardado durante un cambio de tamaño de la ventana (null fuera de él). */
+  const held = useRef({ progress: null as number | null, at: 0 });
+
+  /**
+   * El encuadre del móvil sigue al hueco libre y a la presentación con un suavizado corto: el hueco
+   * cambia a saltos (la ficha cambia de contenido) o con la transición de la ficha, y la cámara lo
+   * acompaña sin brincos. Mientras no ha llegado, pide frames.
+   */
+  const followView = (now: number) => {
+    const v = view.current;
+    const target = runtime.view;
+    if (!target) {
+      v.ready = false;
+      return;
+    }
+    const snap = getSnapshot();
+    const intro = snap.intro && snap.selected === null && !snap.atExit ? 1 : 0;
+    if (!v.ready) {
+      Object.assign(v, target, { intro, ready: true, at: now });
+      return;
+    }
+    const dt = Math.min(0.05, Math.max(0, (now - v.at) / 1000));
+    v.at = now;
+    // Con «reducir movimiento», el encuadre salta a su sitio en lugar de acompañar a la ficha.
+    if (REDUCED?.matches) {
+      Object.assign(v, target, { intro });
+      return;
+    }
+    const k = 1 - Math.exp(-FRAME_RATE * dt);
+    let moving = false;
+    for (const key of ['l', 't', 'r', 'b'] as const) {
+      const d = target[key] - v[key];
+      if (Math.abs(d) < 0.25) v[key] = target[key];
+      else {
+        v[key] += d * k;
+        moving = true;
+      }
+    }
+    const di = intro - v.intro;
+    if (Math.abs(di) < 0.002) v.intro = intro;
+    else {
+      v.intro += di * (1 - Math.exp(-4.5 * dt));
+      moving = true;
+    }
+    if (moving) requestAmbient();
+  };
+
   const clock = useRef({ last: 0, time: 0, frame: 0 });
   useFrame(() => {
     const lenis = runtime.lenis;
     if (!lenis) return;
+    // Al girar el móvil o cambiar el tamaño de la ventana se mantiene el avance guardado (ver `held`).
+    const h = held.current;
+    if (h.progress !== null) {
+      if (performance.now() - h.at > RESIZE_SETTLE_MS) h.progress = null;
+      else {
+        if (lenis.limit > 0) lenis.scrollTo(h.progress * lenis.limit, { immediate: true, force: true });
+        invalidate();
+      }
+    }
     const now = frameClock.now;
     const c = clock.current;
     // Con marcapasos a 2 solo se pinta un refresco de cada dos; el scroll sigue avanzando igual.
@@ -229,6 +339,7 @@ export function CameraRig() {
     const progress = lenis.limit > 0 ? Math.min(1, Math.max(0, lenis.animatedScroll / lenis.limit)) : 0;
     runtime.progress = progress;
     runtime.cameraX = cameraXAt(progress);
+    if (compact.current) followView(now);
     place(runtime.cameraX);
     updateActive(runtime.cameraX);
     updateExit(runtime.cameraX);

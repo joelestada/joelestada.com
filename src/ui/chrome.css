@@ -32,6 +32,11 @@
   padding-right: 4px;
 }
 
+/* El nombre corto de la miga es para el móvil (abajo). */
+.crumbs__short {
+  display: none;
+}
+
 /* La pestaña de esta página no lleva a ningún sitio nuevo, pero se puede volver a ella. */
 .bar--sheet .tab {
   text-decoration: none;
@@ -73,15 +78,16 @@
   background: var(--wash);
 }
 
-.bar__back:hover {
-  color: var(--paper);
-}
+@media (hover: hover) {
+  .bar__back:hover {
+    color: var(--paper);
+  }
 
-.bar__back:hover::before,
-.bar__act:hover::before {
-  transform: none;
+  .bar__back:hover::before,
+  .bar__act:hover::before {
+    transform: none;
+  }
 }
-
 .bar__back:focus-visible,
 .bar__act:focus-visible {
   outline: 2px solid currentColor;
@@ -99,14 +105,24 @@
   transition: transform 0.45s var(--ease-out);
 }
 
-.bar__back:hover svg,
 .bar__back:focus-visible svg {
   transform: translateX(-3px);
 }
 
-.bar__act:hover svg,
+@media (hover: hover) {
+  .bar__back:hover svg {
+    transform: translateX(-3px);
+  }
+}
+
 .bar__act:focus-visible svg {
   transform: translateY(2px);
+}
+
+@media (hover: hover) {
+  .bar__act:hover svg {
+    transform: translateY(2px);
+  }
 }
 
 @media (max-width: 1100px) {
@@ -126,6 +142,12 @@
   .bar--sheet .crumbs__root,
   .bar--sheet .crumbs__sep {
     display: none;
+  }
+  .bar--sheet .crumbs__label:has(+ .crumbs__short) {
+    display: none;
+  }
+  .bar--sheet .crumbs__short {
+    display: inline;
   }
   .bar__back,
   .bar__act {
@@ -226,19 +248,34 @@
   transition: transform 1.2s var(--ease-out);
 }
 
-.lidx__next:hover .lidx__next-text::before,
 .lidx__next:focus-visible .lidx__next-text::before {
   transform: none;
 }
 
-.lidx__next:hover .lidx__plate img,
+@media (hover: hover) {
+  .lidx__next:hover .lidx__next-text::before {
+    transform: none;
+  }
+}
+
 .lidx__next:focus-visible .lidx__plate img {
   transform: scale(1.045);
 }
 
-.lidx__next:hover .lidx__next-go,
+@media (hover: hover) {
+  .lidx__next:hover .lidx__plate img {
+    transform: scale(1.045);
+  }
+}
+
 .lidx__next:focus-visible .lidx__next-go {
   transform: translateX(6px);
+}
+
+@media (hover: hover) {
+  .lidx__next:hover .lidx__next-go {
+    transform: translateX(6px);
+  }
 }
 
 .lidx__next:focus-visible {
@@ -282,10 +319,16 @@
   color: inherit;
 }
 
-.lidx .node:not(.is-active):hover .node__glyph::before,
 .lidx .node:focus-visible .node__glyph::before {
   opacity: 0.5;
   transform: none;
+}
+
+@media (hover: hover) {
+  .lidx .node:not(.is-active):hover .node__glyph::before {
+    opacity: 0.5;
+    transform: none;
+  }
 }
 
 .lidx .rail__fill {
@@ -332,12 +375,28 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
-  /* El lema no cabe: el cajetín se queda con nombre, revisión y hoja. */
+  /*
+   * El lema no cabe: el cajetín se queda con nombre, revisión y hoja. El nombre entero (antes se
+   * cortaba en «JOEL ESTA…»); si algo cede, la revisión.
+   */
   .lidx__block {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
   .lidx__block span:nth-child(2) {
     display: none;
+  }
+}
+
+/* Muy estrecho (o en español, más largo): nombre y hoja; la revisión ya no cabe sin cortarse. */
+@media (max-width: 400px) {
+  .lidx__block {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .lidx__block span:nth-child(3) {
+    display: none;
+  }
+  .lidx__block span:last-child {
+    text-align: right;
   }
 }
 
@@ -747,9 +806,14 @@ html.flat .track {
   transition: background-size 0.5s var(--ease-out);
 }
 
-.flat__mail:hover,
 .flat__mail:focus-visible {
   background-size: 100% 1px;
+}
+
+@media (hover: hover) {
+  .flat__mail:hover {
+    background-size: 100% 1px;
+  }
 }
 
 .flat__actions {
@@ -759,14 +823,15 @@ html.flat .track {
 }
 
 /* La lámina del contacto no es un enlace: no reacciona al cursor como las de las estaciones. */
-.flat__exit:hover .lidx__next-text::before {
-  transform: scaleX(0);
-}
+@media (hover: hover) {
+  .flat__exit:hover .lidx__next-text::before {
+    transform: scaleX(0);
+  }
 
-.flat__exit:hover .lidx__plate img {
-  transform: none;
+  .flat__exit:hover .lidx__plate img {
+    transform: none;
+  }
 }
-
 .flat > .lidx {
   max-width: none;
   padding: 0 0 calc(var(--gutter) + 28px);

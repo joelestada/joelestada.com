@@ -40,6 +40,12 @@
   --ease-sheet: cubic-bezier(0.76, 0, 0.24, 1);
   /* Cambio de texto (rodillo): sale deprisa y se posa despacio, sin rebote. */
   --ease-swap: cubic-bezier(0.33, 1, 0.68, 1);
+  /*
+   * Lo que tapa por abajo la barra del navegador (la de Safari en el iPhone), medido en la portada
+   * (ui/useViewArea): el pie y la ficha se apoyan encima. Fuera de la portada vale 0.
+   */
+  --vv-b: 0px;
+  --frame-b: calc(var(--gutter) + var(--vv-b));
 }
 
 @media (min-width: 1400px) {
@@ -48,11 +54,36 @@
   }
 }
 
-@media (max-width: 720px) {
+/*
+ * Pantallas compactas (lib/compact.ts): el móvil en vertical y, con poca altura, en horizontal. En
+ * horizontal la barra y el pie adelgazan: la altura es lo que falta.
+ */
+@media (max-width: 720px), (orientation: landscape) and (max-height: 520px) {
   :root {
     --gutter: 8px;
     --bar-h: 46px;
-    --rail-h: 54px;
+    --rail-h: 52px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  :root {
+    --bar-h: 42px;
+    --rail-h: 46px;
+  }
+}
+
+/*
+ * En el móvil los titulares se reparten en líneas parejas y los párrafos no dejan una palabra sola
+ * en la última línea: con 30–45 caracteres por línea, un corte torpe se nota mucho más.
+ */
+@media (max-width: 720px) {
+  /* Solo el estilo del corte (text-wrap-style): el atajo text-wrap anulaba los nowrap heredados. */
+  :where(h1, h2, h3) {
+    text-wrap-style: balance;
+  }
+  :where(p, li, dd, blockquote, figcaption) {
+    text-wrap-style: pretty;
   }
 }
 
@@ -122,6 +153,21 @@ html.line-lock body {
 
 html.line-touch {
   touch-action: pan-y pinch-zoom;
+}
+
+/*
+ * En táctil, mantener pulsado sobre una máquina la lleva a plena potencia: ni lupa ni selección de
+ * texto ni el menú del enlace (iOS). El panel, que es para leer, sí se puede seleccionar.
+ */
+html.line-touch body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+html.line-touch .drawer {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 html.line-lock .track {
@@ -212,36 +258,52 @@ html.is-pointing body {
     transform 0.18s 0.2s;
 }
 
-.bar__brand:hover .bar__name::before,
 .bar__brand:focus-visible .bar__name::before,
-.btn:hover::before,
 .btn:focus-visible::before,
-.pcard__enter:hover::before,
 .pcard__enter:focus-visible::before,
-.pcard__explode:hover::before,
 .pcard__explode:focus-visible::before,
 .pcard__explode.is-on::before,
-.pj-cta:hover::before,
 .pj-cta:focus-visible::before {
   transform: none;
   transform-origin: left;
   transition: transform 0.55s var(--ease-out) 0.07s;
 }
 
-.bar__brand:hover .bar__name::after,
+@media (hover: hover) {
+  .bar__brand:hover .bar__name::before,
+  .btn:hover::before,
+  .pcard__enter:hover::before,
+  .pcard__explode:hover::before,
+  .pj-cta:hover::before {
+    transform: none;
+    transform-origin: left;
+    transition: transform 0.55s var(--ease-out) 0.07s;
+  }
+}
+
 .bar__brand:focus-visible .bar__name::after,
-.btn:hover::after,
 .btn:focus-visible::after,
-.pcard__enter:hover::after,
 .pcard__enter:focus-visible::after,
-.pcard__explode:hover::after,
 .pcard__explode:focus-visible::after,
 .pcard__explode.is-on::after,
-.pj-cta:hover::after,
 .pj-cta:focus-visible::after {
   opacity: 1;
   transform: none;
   transition:
     opacity 0.16s,
     transform 0.3s var(--ease-out);
+}
+
+@media (hover: hover) {
+  .bar__brand:hover .bar__name::after,
+  .btn:hover::after,
+  .pcard__enter:hover::after,
+  .pcard__explode:hover::after,
+  .pj-cta:hover::after {
+    opacity: 1;
+    transform: none;
+    transition:
+      opacity 0.16s,
+      transform 0.3s var(--ease-out);
+  }
 }

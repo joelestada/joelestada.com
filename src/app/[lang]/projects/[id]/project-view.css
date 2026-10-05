@@ -202,10 +202,11 @@
   margin-left: 22px;
 }
 
-.pj-tour__tabs button:hover {
-  color: var(--ink);
+@media (hover: hover) {
+  .pj-tour__tabs button:hover {
+    color: var(--ink);
+  }
 }
-
 .pj-tour__tabs button:focus-visible {
   outline: 2px solid var(--ink);
   outline-offset: -2px;
@@ -229,6 +230,7 @@
 /* Pista de capturas: se desliza en horizontal y encaja una a una. Cada captura lleva su margen
    lateral dentro (así la sombra de la ventana no queda cortada por la pista). */
 .pj-tour__track {
+  position: relative;
   display: flex;
   align-items: flex-start;
   transition: height 0.45s var(--ease-out);
@@ -250,6 +252,18 @@
   padding: 0 var(--mat-x) 10px;
   scroll-snap-align: start;
   scroll-snap-stop: always;
+}
+
+/* Cabecera, tramos y texto aparte: solo en el móvil (abajo). */
+.pj-tour__head,
+.pj-tour__bar,
+.pj-tour__info {
+  display: none;
+}
+
+/* Tocar la captura la amplía. */
+.pj-win__screen {
+  cursor: zoom-in;
 }
 
 /* Flechas y contador, al pie del passe-partout. */
@@ -278,10 +292,16 @@
     color 0.25s;
 }
 
-.pj-tour__step:hover,
 .pj-tour__step:focus-visible {
   background: var(--ink);
   color: var(--paper-lit);
+}
+
+@media (hover: hover) {
+  .pj-tour__step:hover {
+    background: var(--ink);
+    color: var(--paper-lit);
+  }
 }
 
 .pj-tour__step:focus-visible {
@@ -482,11 +502,18 @@
   stroke-width: 1.4;
 }
 
-.pj-win__zoom:hover,
 .pj-win__zoom:focus-visible {
   background: var(--paper-lit);
   color: var(--ink);
   outline: none;
+}
+
+@media (hover: hover) {
+  .pj-win__zoom:hover {
+    background: var(--paper-lit);
+    color: var(--ink);
+    outline: none;
+  }
 }
 
 /* Captura ampliada: a pantalla completa y a tamaño de lectura; en el móvil se desplaza. */
@@ -526,10 +553,18 @@
 }
 
 .pj-zoom__bar span {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   color: color-mix(in srgb, var(--paper) 78%, transparent);
+}
+
+.pj-zoom__bar b {
+  flex: none;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .pj-zoom__bar button {
@@ -550,14 +585,103 @@
 
 .pj-zoom__scroll {
   flex: 1;
+  min-height: 0;
   overflow: auto;
   overscroll-behavior: contain;
 }
 
+/* Entera: centrada y a lo que quepa; tocarla la acerca. */
 .pj-zoom__scroll img {
   display: block;
-  width: max(100%, 1240px);
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
   height: auto;
+  margin: auto;
+  cursor: zoom-in;
+  animation: pj-fade 0.35s var(--ease-out) both;
+}
+
+.pj-zoom:not(.is-read) .pj-zoom__scroll {
+  display: grid;
+  padding: 12px;
+  overflow: hidden;
+  touch-action: pan-y pinch-zoom;
+}
+
+/* De cerca: a tamaño de lectura, se desplaza en las dos direcciones. */
+.pj-zoom.is-read .pj-zoom__scroll img {
+  width: max(100%, 1240px);
+  max-width: none;
+  max-height: none;
+  cursor: zoom-out;
+}
+
+/* Lo que hace tocar la captura, al pie de la vista (en el móvil, que no tiene cursor de lupa). */
+.pj-zoom__hint {
+  display: none;
+}
+
+@media (hover: none) {
+  .pj-zoom:not(.is-read) .pj-zoom__scroll {
+    position: relative;
+  }
+  .pj-zoom:not(.is-read) .pj-zoom__hint {
+    display: block;
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    padding: 6px 10px;
+    background: color-mix(in srgb, var(--ink) 82%, transparent);
+    font: 500 var(--fs-1)/1 var(--font);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: color-mix(in srgb, var(--paper) 78%, transparent);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+}
+
+/* Pie: anterior, el texto de la captura y siguiente. */
+.pj-zoom__foot {
+  flex: none;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--paper) 14%, transparent);
+}
+
+.pj-zoom__foot p {
+  font-size: var(--fs-2);
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--paper) 78%, transparent);
+  text-align: center;
+  text-wrap: balance;
+}
+
+.pj-zoom__foot button {
+  all: unset;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  box-sizing: border-box;
+  border: 1px solid color-mix(in srgb, var(--paper) 40%, transparent);
+  font: 500 var(--fs-4)/1 var(--font);
+  cursor: pointer;
+}
+
+.pj-zoom__foot button:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
+}
+
+.pj-zoom__foot button:active {
+  background: var(--paper);
+  color: var(--ink);
 }
 
 html.pj-zooming,
@@ -746,11 +870,17 @@ html.pj-zooming body {
   font-style: normal;
 }
 
-.pj-index a:hover,
 .pj-index a:focus-visible,
 .pj-index a[aria-current] {
   color: var(--ink);
   outline: none;
+}
+
+@media (hover: hover) {
+  .pj-index a:hover {
+    color: var(--ink);
+    outline: none;
+  }
 }
 
 .pj-index a[aria-current] {
@@ -915,10 +1045,16 @@ html.pj-zooming body {
     border-color 0.2s;
 }
 
-.pj-strip button:hover,
 .pj-strip button[aria-pressed='true'] {
   border-color: var(--ink);
   color: var(--ink);
+}
+
+@media (hover: hover) {
+  .pj-strip button:hover {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
 }
 
 .pj-strip button[aria-pressed='true'] {
@@ -1058,11 +1194,18 @@ html.pj-zooming body {
     padding 0.35s var(--ease-out);
 }
 
-.pj-modules button:hover,
 .pj-modules button:focus-visible {
   padding-left: 10px;
   background: color-mix(in srgb, var(--ink) 5%, transparent);
   outline: none;
+}
+
+@media (hover: hover) {
+  .pj-modules button:hover {
+    padding-left: 10px;
+    background: color-mix(in srgb, var(--ink) 5%, transparent);
+    outline: none;
+  }
 }
 
 .pj-modules button:focus-visible {
@@ -1076,9 +1219,14 @@ html.pj-zooming body {
   transition: opacity 0.25s;
 }
 
-.pj-modules button:hover i,
 .pj-modules button:focus-visible i {
   opacity: 1;
+}
+
+@media (hover: hover) {
+  .pj-modules button:hover i {
+    opacity: 1;
+  }
 }
 
 .pj-modules em {
@@ -1204,9 +1352,14 @@ html.pj-zooming body {
   transition: transform 0.45s var(--ease-out);
 }
 
-.pj-cta:hover > span,
 .pj-cta:focus-visible > span {
   transform: translate(2px, -2px);
+}
+
+@media (hover: hover) {
+  .pj-cta:hover > span {
+    transform: translate(2px, -2px);
+  }
 }
 
 .pj-cta:focus-visible {
@@ -1221,9 +1374,14 @@ html.pj-zooming body {
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--paper) 50%, transparent);
 }
 
-.pj-cta--line:hover > span,
 .pj-cta--line:focus-visible > span {
   transform: translateX(3px);
+}
+
+@media (hover: hover) {
+  .pj-cta--line:hover > span {
+    transform: translateX(3px);
+  }
 }
 
 .pj-cta--ink {
@@ -1338,42 +1496,138 @@ html.pj-zooming body {
     padding-top: 28px;
     padding-bottom: 32px;
   }
+  /* El año es corto: su celda se ajusta y el estado tiene el resto (no se parte en dos líneas). */
   .pj-hero__block {
+    grid-template-columns: auto minmax(0, 1fr);
     max-width: none;
   }
-  /* Capturas en móvil: casi a lo ancho, sin cruces, y la tira de pestañas se funde por la derecha
-     para que se vea que sigue. */
-  /* A sangre: el passe-partout va de borde a borde (una banda, no una caja descuadrada) y las
-     pestañas arrancan alineadas con el texto. */
+  .pj-hero__block div:nth-child(2) {
+    padding-right: 22px;
+  }
+  /*
+   * Capturas en el móvil. A sangre: el passe-partout va de borde a borde (una banda, no una caja
+   * descuadrada). Las diez pestañas no caben: arriba, el grupo y la pantalla con el contador; la
+   * captura siguiente asoma por la derecha; debajo, anterior y siguiente a los lados de una barra de
+   * tramos (uno por pantalla, agrupados); y el texto de la captura en curso, que es lo único que
+   * cambia de alto (va debajo de los controles: no se mueven al pasar).
+   */
   .pj-tour {
     padding: 0;
   }
-  .pj-tour__tabs {
-    -webkit-mask-image: linear-gradient(90deg, black 82%, transparent);
-    mask-image: linear-gradient(90deg, black 82%, transparent);
-    padding-left: var(--pad);
-    padding-right: 40px;
-    scroll-padding-left: var(--pad);
+  .pj-tour__tabs,
+  .pj-tour__where,
+  .pj-slide .pj-mount__caption,
+  .pj-slide .pj-notes {
+    display: none;
   }
-  .pj-tour__tabs button {
-    padding: 10px 12px 9px;
+  .pj-tour__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 20px 0 10px;
+    padding: 0 var(--pad);
+    font: 500 var(--fs-1)/1.4 var(--font);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .pj-tour__head span {
+    min-width: 0;
+  }
+  .pj-tour__head b {
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .pj-tour__head em {
+    flex: none;
+    font-style: normal;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
   }
   .pj-mount {
-    --mat-x: 10px;
-    padding-top: 12px;
+    padding-top: 14px;
     border-left: 0;
     border-right: 0;
   }
   .pj-cross {
     display: none;
   }
-  .pj-mount__caption {
-    margin-top: 14px;
-    font-size: var(--fs-3);
+  .pj-tour__track {
+    align-items: center;
+    gap: 10px;
+    padding: 0 7%;
+    scroll-padding: 0 7%;
+  }
+  .pj-slide {
+    flex: 0 0 86%;
+    padding: 0 0 4px;
+    scroll-snap-align: center;
+    transition: opacity 0.35s var(--ease-out);
+  }
+  /* La que asoma, algo apagada: se lee como «la siguiente». */
+  .pj-slide[inert] {
+    opacity: 0.55;
   }
   .pj-tour__nav {
-    padding-top: 12px;
-    padding-bottom: 12px;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 8px var(--pad) 12px;
+  }
+  .pj-tour__step {
+    width: 44px;
+    height: 44px;
+  }
+  .pj-tour__step:active {
+    background: var(--ink);
+    color: var(--paper-lit);
+  }
+  .pj-tour__bar {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+  .pj-tour__bar button {
+    all: unset;
+    flex: 1;
+    display: grid;
+    align-items: center;
+    height: 44px;
+    padding: 0 1.5px;
+    cursor: pointer;
+  }
+  .pj-tour__bar button.is-first {
+    margin-left: 7px;
+  }
+  .pj-tour__bar i {
+    height: 3px;
+    background: var(--rule-strong);
+    transition:
+      background-color 0.3s,
+      transform 0.3s var(--ease-out);
+  }
+  .pj-tour__bar button.is-on i {
+    background: var(--ink);
+    transform: scaleY(1.67);
+  }
+  .pj-tour__bar button:focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: -8px;
+  }
+  .pj-tour__info {
+    display: block;
+    padding: 16px var(--pad) 0;
+  }
+  .pj-tour__info .pj-mount__caption {
+    margin: 0;
+    font-size: var(--fs-3);
+    animation: pj-fade 0.4s var(--ease-out) both;
+  }
+  .pj-tour__info .pj-notes {
+    animation: pj-fade 0.4s var(--ease-out) both 0.05s;
   }
   .pj-content {
     gap: 48px;

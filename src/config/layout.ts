@@ -167,8 +167,14 @@ export const CAMERA = {
   viewHeight: 12.2,
   /** Anchura mínima visible (la del encuadre 16:9): en ventanas más estrechas se aleja en vez de recortar la persiana. */
   minViewWidth: 21.6,
-  /** En vertical (móvil) se acepta recortar más para que las máquinas no queden diminutas. */
-  minViewWidthPortrait: 8.4,
+  /**
+   * En vertical (móvil) se acepta recortar más para que las máquinas no queden diminutas: unos 7 m
+   * a lo ancho, lo que mide el motor con su vallado. Las máquinas más anchas pierden algo de vallado
+   * por los lados; el encuadre (scene/framing) las centra en el hueco que deja la interfaz.
+   */
+  minViewWidthPortrait: 7.2,
+  /** Móvil en horizontal (poca altura): metros visibles en vertical. Con los de siempre quedaban diminutas. */
+  shortViewHeight: 8.6,
   /** En vertical el encuadre se corre hacia -X: las máquinas quedan centradas y no pegadas al borde. */
   portraitShiftX: -0.6,
   /**

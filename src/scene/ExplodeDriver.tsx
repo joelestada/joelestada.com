@@ -4,12 +4,9 @@ import { useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { STATION_BY_ID } from '@/config/stations';
 import { getSnapshot, markDirty } from '@/lib/runtime';
-import { explode, explodeEnd, stepExplode } from './explode';
+import { EXPLODE_REACH as REACH, explode, explodeEnd, stepExplode } from './explode';
 import { frameClock } from './frameClock';
 import { regionOnScreen, type Region } from './kit/regions';
-
-/** Margen alrededor del volumen de la máquina que pueden ocupar sus piezas separadas (m). */
-const REACH = { side: 1.3, up: 1.6 };
 
 /**
  * Conduce la vista explosionada: sigue a la ficha (abre la máquina pedida; si había otra abierta,

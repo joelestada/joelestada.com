@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { partNames } from '@/config/parts';
 import { SITE, useSite } from '@/config/site';
-import { STATIONS, useStationById, useStations } from '@/config/stations';
+import { STATIONS, useStationById, useStations, type StationId } from '@/config/stations';
 import { useHref, useLang } from '@/i18n/LangProvider';
 import { useUi } from '@/i18n/ui';
-import { goHome, goToExit, goToStation, openMenu, rememberReturn, setSelected, setUiHover, toggleExplode } from '@/lib/runtime';
+import { COMPACT_QUERY } from '@/lib/compact';
+import { goHome, goToStation, openMenu, rememberReturn, setSelected, setUiHover, stepLine, toggleExplode } from '@/lib/runtime';
 import { cardAnchor } from './cardAnchor';
-import { setHotPart } from './ExplodeCallouts';
+import { setHotPart, useHotPart } from './ExplodeCallouts';
 import { coverAndGo } from './sheet';
 import { SheetLink } from './SheetLink';
 import { Morph, Swap } from './Swap';
@@ -38,14 +39,45 @@ const StartGlyph = () => (
 );
 
 /**
- * Título: dos líneas fijas, cada una con su rodillo (en móvil, una sola línea con uno). Cerrada, el
- * área mide siempre dos líneas (la ficha no cambia de alto entre máquinas); abierta, se ajusta a las
- * suyas (--lines) mientras crece el cuerpo.
+ * Título: dos líneas fijas, cada una con su rodillo. Cerrada, el área mide siempre dos líneas (la
+ * ficha no cambia de alto entre máquinas); abierta, se ajusta a las suyas (--lines) mientras crece el
+ * cuerpo. En el móvil va en una sola línea con su rodillo si cabe y, si no, en las dos de siempre (en
+ * español los títulos son más largos): nunca se corta.
  */
 function Title({ k, lines, dir }: { k: string; lines: string[]; dir: number }) {
+  const ref = useRef<HTMLHeadingElement>(null);
+  const [wrap, setWrap] = useState(false);
+  const text = lines.join(' ');
+  const many = lines.length > 1;
+  useLayoutEffect(() => {
+    const h = ref.current;
+    if (!h || !many) return setWrap(false);
+    const compact = window.matchMedia(COMPACT_QUERY);
+    // Lo que mide el título en una línea, con la letra del propio título (sin añadir nada a la página).
+    const fit = () => {
+      if (!compact.matches) return setWrap(false);
+      const st = getComputedStyle(h);
+      const ctx = (measure ??= document.createElement('canvas').getContext('2d'));
+      if (!ctx) return;
+      ctx.font = `${st.fontWeight} ${st.fontSize} ${st.fontFamily}`;
+      const width = ctx.measureText(text).width + (parseFloat(st.letterSpacing) || 0) * text.length;
+      setWrap(width > h.clientWidth - parseFloat(st.paddingLeft) - parseFloat(st.paddingRight) + 0.5);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(h);
+    compact.addEventListener('change', fit);
+    let live = true;
+    document.fonts?.ready.then(() => live && fit());
+    return () => {
+      live = false;
+      ro.disconnect();
+      compact.removeEventListener('change', fit);
+    };
+  }, [text, many]);
   return (
-    <h2 className="pcard__title" style={{ '--lines': lines.length } as CSSProperties}>
-      <span className="sr-only">{lines.join(' ')}</span>
+    <h2 ref={ref} className={`pcard__title${wrap ? ' is-wrap' : ''}`} style={{ '--lines': lines.length } as CSSProperties}>
+      <span className="sr-only">{text}</span>
       <span className="pcard__lines" aria-hidden>
         {[0, 1].map((i) => (
           <span key={i} className="pcard__line">
@@ -57,10 +89,61 @@ function Title({ k, lines, dir }: { k: string; lines: string[]; dir: number }) {
       </span>
       <span className="pcard__oneline" aria-hidden>
         <Swap k={k} dir={dir} delay={STAGGER.title}>
-          {lines.join(' ')}
+          {text}
         </Swap>
       </span>
     </h2>
+  );
+}
+
+/** Lienzo para medir textos (el título de la ficha en el móvil). */
+let measure: CanvasRenderingContext2D | null = null;
+
+/**
+ * Lista de piezas del despiece, como la de un plano de conjunto. En escritorio, en dos columnas: al
+ * pasar el cursor por una fila se destaca su globo. En el móvil es una cinta que se desliza: tocar
+ * una pieza destaca su globo, y tocar un globo destaca su pieza y la trae a la vista.
+ */
+function PartList({ id }: { id: StationId }) {
+  const t = useUi();
+  const lang = useLang();
+  const hot = useHotPart();
+  const list = useRef<HTMLOListElement>(null);
+  const pointer = useRef('mouse');
+
+  useEffect(() => {
+    const ol = list.current;
+    const li = ol?.querySelector<HTMLElement>(`[data-n="${hot}"]`);
+    if (!ol || !li || ol.scrollWidth <= ol.clientWidth || !window.matchMedia(COMPACT_QUERY).matches) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    ol.scrollTo({ left: li.offsetLeft - (ol.clientWidth - li.offsetWidth) / 2, behavior: reduce ? 'auto' : 'smooth' });
+  }, [hot]);
+
+  return (
+    <ol ref={list} className="pcard__bom" aria-label={t.card.partsList} data-lenis-prevent-touch>
+      {partNames(id, lang).map((p) => (
+        <li
+          key={p.n}
+          data-n={p.n}
+          className={hot === p.n ? 'is-hot' : undefined}
+          onPointerEnter={(e) => e.pointerType === 'mouse' && setHotPart(p.n)}
+          onPointerLeave={(e) => e.pointerType === 'mouse' && setHotPart(0)}
+        >
+          <button
+            type="button"
+            aria-pressed={hot === p.n}
+            onPointerDown={(e) => {
+              pointer.current = e.pointerType;
+            }}
+            // Con el ratón la fila ya está destacada al pasar; con el dedo, tocar enciende y apaga.
+            onClick={() => setHotPart(pointer.current === 'mouse' ? p.n : hot === p.n ? 0 : p.n)}
+          >
+            <b>{String(p.n).padStart(2, '0')}</b>
+            <span>{p.name}</span>
+          </button>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -132,7 +215,6 @@ function ExitBody() {
 export function ProjectCard() {
   const { active, selected, atExit, exploded, intro: atStart } = useSnapshot('active', 'selected', 'atExit', 'exploded', 'intro');
   const t = useUi();
-  const lang = useLang();
   const site = useSite();
   const stations = useStations();
   const byId = useStationById();
@@ -189,11 +271,8 @@ export function ProjectCard() {
     coverAndGo(() => router.push(href), { kicker: `${s.number} / ${TOTAL}`, title: s.title.join(' ') }, ref.current);
   };
 
-  const step = (k: number) => {
-    if (k < 0) goHome();
-    else if (k === EXIT) goToExit();
-    else goToStation(STATIONS[k].id, { select: open });
-  };
+  const action = () => (intro ? openMenu('about') : exit ? goHome() : open ? setSelected(null) : goToStation(id, { select: true }));
+  const actionLabel = intro ? t.card.aboutAria : exit ? t.rail.backToStart : open ? t.card.closeDetails : t.card.openDetails;
 
   // Al pasar de máquina con la ficha abierta solo cambia el texto (se funde y su área se adapta con
   // suavidad); el aviso y los botones son los mismos y no se mueven.
@@ -202,18 +281,7 @@ export function ProjectCard() {
       {/* En la vista explosionada, la descripción deja sitio a la lista de piezas (como en un plano de conjunto). */}
       <Morph className="pcard__text">
         <Swap mode="fade" k={`${id}-${exploded === id ? 'bom' : 'desc'}`} dir={dir}>
-          {exploded === id ? (
-            <ol className="pcard__bom" aria-label={t.card.partsList}>
-              {partNames(id, lang).map((p) => (
-                <li key={p.n} onPointerEnter={() => setHotPart(p.n)} onPointerLeave={() => setHotPart(0)}>
-                  <b>{String(p.n).padStart(2, '0')}</b>
-                  <span>{p.name}</span>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="pcard__desc">{s.description}</p>
-          )}
+          {exploded === id ? <PartList id={id} /> : <p className="pcard__desc">{s.description}</p>}
         </Swap>
       </Morph>
       {/* El pulsador de hombre muerto: sin este aviso nadie lo encuentra. */}
@@ -242,7 +310,7 @@ export function ProjectCard() {
   return (
     <section
       ref={ref}
-      className={`pcard${expanded ? ' is-open' : ''}${exit ? ' is-exit' : ''}${intro ? ' is-intro' : ''}`}
+      className={`pcard${expanded ? ' is-open' : ''}${exit ? ' is-exit' : ''}${intro ? ' is-intro' : ''}${!intro && !exit && exploded === id ? ' is-exploded' : ''}`}
       data-ui
       aria-label={intro ? t.card.introAria : exit ? t.card.contactAria : `${t.card.projectAria} ${s.number}: ${s.title.join(' ')}`}
       onPointerEnter={() => {
@@ -255,29 +323,53 @@ export function ProjectCard() {
       }}
     >
       <div className="pcard__sheet">
-        <header className="pcard__head">
-          <span className="pcard__badge" aria-hidden>
-            <Swap k={key} dir={dir} delay={STAGGER.badge}>
-              {intro ? <StartGlyph /> : exit ? <ExitGlyph /> : Number(s.number)}
-            </Swap>
-          </span>
-          <span className="pcard__field">
-            <Swap k={key} dir={dir} delay={STAGGER.field}>
-              {intro ? site.roleShort.toUpperCase() : exit ? t.card.endField : s.field}
-            </Swap>
-          </span>
-          <span className="pcard__meta">
-            {exit || intro ? (
-              SITE.available && <i className="led led--ok led--pulse" aria-hidden />
-            ) : (
-              <Swap k={key} dir={dir} delay={STAGGER.meta}>
-                {s.year}
+        {/*
+          En el móvil el pie de celdas no está (anterior y siguiente van en el pie de la línea): la
+          cabecera entera es el botón de la acción de la ficha, con su celda a la derecha del título.
+        */}
+        <div className="pcard__top">
+          <header className="pcard__head">
+            <span className="pcard__badge" aria-hidden>
+              <Swap k={key} dir={dir} delay={STAGGER.badge}>
+                {intro ? <StartGlyph /> : exit ? <ExitGlyph /> : Number(s.number)}
               </Swap>
-            )}
-          </span>
-        </header>
+            </span>
+            <span className="pcard__field">
+              <Swap k={key} dir={dir} delay={STAGGER.field}>
+                {intro ? site.roleShort.toUpperCase() : exit ? t.card.endField : s.field}
+              </Swap>
+            </span>
+            <span className="pcard__meta">
+              {exit || intro ? (
+                SITE.available && <i className="led led--ok led--pulse" aria-hidden />
+              ) : (
+                <Swap k={key} dir={dir} delay={STAGGER.meta}>
+                  {s.year}
+                </Swap>
+              )}
+            </span>
+          </header>
 
-        <Title k={key} lines={intro ? [SITE.person] : exit ? exitTitle : s.title} dir={dir} />
+          <Title k={key} lines={intro ? [SITE.person] : exit ? exitTitle : s.title} dir={dir} />
+          <button
+            type="button"
+            className={`pcard__toggle${intro || exit ? '' : ' is-wide'}`}
+            onClick={action}
+            aria-expanded={exit || intro ? undefined : open}
+            aria-label={actionLabel}
+          >
+            <span className="pcard__toggle-cell" aria-hidden>
+              {exit ? (
+                <svg className="pcard__action-icon pcard__action-icon--start" viewBox="0 0 16 16">
+                  <path d="M2.5 3 V13" />
+                  <path d="M13.5 8 H5.5 M8.5 5 L5.5 8 L8.5 11" />
+                </svg>
+              ) : (
+                <i className="pcard__plus" />
+              )}
+            </span>
+          </button>
+        </div>
 
         <div className="pcard__more" inert={!expanded}>
           <div className="pcard__inner">
@@ -290,13 +382,7 @@ export function ProjectCard() {
       </div>
 
       <footer className="pcard__foot">
-        <button
-          type="button"
-          className="pcard__action"
-          onClick={() => (intro ? openMenu('about') : exit ? goHome() : open ? setSelected(null) : goToStation(id, { select: true }))}
-          aria-expanded={exit || intro ? undefined : open}
-          aria-label={intro ? t.card.aboutAria : exit ? t.rail.backToStart : open ? t.card.closeDetails : t.card.openDetails}
-        >
+        <button type="button" className="pcard__action" onClick={action} aria-expanded={exit || intro ? undefined : open} aria-label={actionLabel}>
           <Swap k={stop} dir={dir}>
             {intro ? (
               <>
@@ -344,7 +430,7 @@ export function ProjectCard() {
         <button
           type="button"
           className="pcard__step"
-          onClick={() => step(at - 1)}
+          onClick={() => stepLine(-1)}
           disabled={at < 0}
           aria-label={at >= 0 ? `${t.card.previous}: ${stopName(at - 1)}` : t.card.previous}
         >
@@ -355,7 +441,7 @@ export function ProjectCard() {
         <button
           type="button"
           className="pcard__step"
-          onClick={() => step(at + 1)}
+          onClick={() => stepLine(1)}
           disabled={at === EXIT}
           aria-label={at < EXIT ? `${t.card.next}: ${stopName(at + 1)}` : t.card.next}
         >

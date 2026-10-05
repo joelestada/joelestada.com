@@ -40,6 +40,8 @@ export type Snapshot = {
 
 type Listener = () => void;
 
+export type ViewArea = { l: number; t: number; r: number; b: number };
+
 export const runtime = {
   lenis: null as Lenis | null,
   /** Progreso suavizado del scroll (0..1). */
@@ -48,6 +50,12 @@ export const runtime = {
   cameraX: CAMERA.startX as number,
   /** Mundo → px CSS de la vista actual (null hasta el primer frame). */
   project: null as ((x: number, y: number, z: number) => [number, number]) | null,
+  /**
+   * Hueco de la pantalla que deja libre la interfaz en las pantallas compactas (px CSS, de la barra a
+   * la ficha): la cámara encuadra ahí la máquina (ui/useViewArea). Null en escritorio, donde la ficha
+   * flota sobre la nave y el encuadre es el de siempre.
+   */
+  view: null as ViewArea | null,
   sceneHover: null as StationId | null,
   uiHover: null as StationId | null,
   autoFocus: null as StationId | null,
@@ -284,11 +292,29 @@ const stationProgress = (id: StationId) => progressAtX(Math.min(CAMERA.endX, Mat
 function scrollToProgress(p: number, immediate = false) {
   const lenis = runtime.lenis;
   if (!lenis) return;
+  pendingGoal = lenis.isStopped && !snapshot.menuOpen ? p : null;
   const target = p * lenis.limit;
   const distance = Math.abs(target - lenis.animatedScroll) / Math.max(1, lenis.limit);
   lenis.scrollTo(target, { duration: 0.9 + 1.3 * Math.sqrt(distance), easing: easeInOutCubic, force: true, immediate });
   runtime.invalidate();
 }
+
+/**
+ * Final del arranque: el scroll vuelve a andar. Lenis, al arrancar, descarta el recorrido que tuviera
+ * a medias: si durante la entrada de la interfaz se pidió una parada (el pie, «empezar la línea»), la
+ * cámara se quedaba a pocos px del inicio con la ficha de otra máquina. Se retoma.
+ */
+export function resumeScroll() {
+  const lenis = runtime.lenis;
+  if (!lenis) return;
+  const goal = pendingGoal;
+  pendingGoal = null;
+  lenis.start();
+  if (goal !== null) scrollToProgress(goal);
+}
+
+/** Parada pedida con el scroll parado por el arranque (Lenis no la recuerda: ver resumeScroll). */
+let pendingGoal: number | null = null;
 
 /** Lleva la cámara a centrar una estación; con `select` además despliega su ficha. */
 export function goToStation(id: StationId, { select = false } = {}) {
@@ -311,6 +337,20 @@ export function goToExit() {
   setSelected(null);
   leaveIntro();
   scrollToProgress(1);
+}
+
+/**
+ * Parada anterior o siguiente: la presentación, las estaciones y el final de la línea. Con una ficha
+ * abierta se abre la de la parada siguiente (la ficha y el pie del móvil usan lo mismo).
+ */
+export function stepLine(dir: 1 | -1) {
+  const { intro, atExit, selected, active } = snapshot;
+  const exit = atExit && selected === null;
+  const at = intro && selected === null && !exit ? -1 : exit ? STATIONS.length : STATIONS.findIndex((s) => s.id === (selected ?? active));
+  const k = at + dir;
+  if (k < 0) goHome();
+  else if (k >= STATIONS.length) goToExit();
+  else goToStation(STATIONS[k].id, { select: selected !== null });
 }
 
 /* ---------- La línea en láminas (sin WebGL) ---------- */

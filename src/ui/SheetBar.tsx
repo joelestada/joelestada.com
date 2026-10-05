@@ -17,8 +17,8 @@ const HIDE_FROM = 140;
 const sectionPath = (s: Section) => (s === 'cv' ? SITE.cv.href : `/?panel=${s}`);
 
 type Props = {
-  /** Lo que se lee en esta hoja: número (si es una estación) y nombre. */
-  here: { n?: string; label: string };
+  /** Lo que se lee en esta hoja: número (si es una estación), nombre y, para el móvil, su nombre corto. */
+  here: { n?: string; label: string; short?: string };
   /** Apartado de la barra que es esta página (el CV). */
   current?: Section;
   /** Estación a la que vuelve la línea, con su ficha abierta; sin ella, al principio. */
@@ -98,7 +98,13 @@ export function SheetBar({ here, current, back, actions }: Props) {
           <li className="crumbs__here" aria-current="page">
             <span>
               {here.n && <em>{here.n}</em>}
-              {here.label}
+              {/* En el móvil, el nombre corto (el del pie de la línea): el largo solo cabía cortado. */}
+              <span className="crumbs__label">{here.label}</span>
+              {here.short && (
+                <span className="crumbs__short" aria-hidden>
+                  {here.short}
+                </span>
+              )}
             </span>
           </li>
         </ol>
@@ -128,7 +134,8 @@ export function SheetBar({ here, current, back, actions }: Props) {
 
       <LangSwitch />
 
-      <SheetLink href={href('/')} className="bar__back" sheet={toLine} onGo={remember}>
+      {/* En el móvil solo queda la flecha: el nombre accesible no puede depender del rótulo visible. */}
+      <SheetLink href={href('/')} className="bar__back" sheet={toLine} onGo={remember} aria-label={`${t.common.backTo} ${t.common.theLine.toLowerCase()}`}>
         <svg className="bar__back-icon" viewBox="0 0 16 16" aria-hidden>
           <path d="M13.5 8 H3 M6.5 4.5 L3 8 L6.5 11.5" />
         </svg>

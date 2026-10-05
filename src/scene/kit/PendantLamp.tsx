@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { LAMP, type Vec3 } from '@/config/layout';
 import { palette } from '@/config/palette';
 import { STATIONS, type StationId } from '@/config/stations';
-import { runtime } from '@/lib/runtime';
+import { markDirty, runtime } from '@/lib/runtime';
 import { boot } from '../boot';
 import { Cyl } from './primitives';
 
@@ -15,7 +15,8 @@ const CABLE = 7;
 
 /**
  * Lámpara industrial de campana esmaltada colgada sobre cada estación. `position` es el
- * centro de la boca. El haz lo pinta el pase de composición; aquí solo se enciende el aro.
+ * centro de la boca, local a su estación. El haz lo pinta el pase de composición; aquí solo se
+ * enciende el aro.
  */
 export function PendantLamp({ position, station }: { position: Vec3; station: StationId }) {
   const [x, y, z] = position;
@@ -25,9 +26,17 @@ export function PendantLamp({ position, station }: { position: Vec3; station: St
   const on = useMemo(() => new THREE.Color(palette.lampLight), []);
   const index = STATIONS.findIndex((s) => s.id === station);
 
+  const last = useRef(-1);
   useFrame(() => {
     const level = Math.max(runtime.fx[station].level, 0.55 * runtime.night * boot.power[index], boot.lamps[index]);
+    if (level === last.current) return;
+    last.current = level;
     rim.color.lerpColors(off, on, level);
+    // El aro es del pase de color: con la cámara quieta, un cambio de foco solo rehace la luz, y el
+    // aro se quedaba encendido (o apagado) hasta el siguiente pintado completo. Declara su zona.
+    // Va dentro del grupo de su estación: la zona, en el mundo, se corre a su X.
+    const wx = STATIONS[index].x + x;
+    markDirty(wx - r - 0.02, y - 0.01, z - r - 0.02, wx + r + 0.02, y + 0.04, z + r + 0.02);
   });
 
   return (

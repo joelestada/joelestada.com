@@ -98,7 +98,8 @@ const APP_GROUP = { en: 'The app', es: 'La app' };
 const PROJECTS_SRC: Partial<Record<StationId, Src<ProjectContent>>> = {
   display: {
     role: { en: 'Sole founder — engine, data, validation and product', es: 'Fundador en solitario: motor, datos, validación y producto' },
-    status: { en: 'In development · private', es: 'En desarrollo · privado' },
+    // El punto va pegado a lo anterior (espacio duro): en una columna estrecha no abre la segunda línea.
+    status: { en: 'In development\u00a0· private', es: 'En desarrollo\u00a0· privado' },
     cta: {
       label: { en: 'REQUEST A DEMO', es: 'PEDIR UNA DEMO' },
       subject: { en: 'Ottometrix demo', es: 'Demo de Ottometrix' },

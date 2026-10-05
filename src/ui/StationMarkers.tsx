@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { BUILDING, END } from '@/config/layout';
 import { STATIONS, useStations } from '@/config/stations';
 import { useUi } from '@/i18n/ui';
+import { COMPACT_QUERY } from '@/lib/compact';
 import { getSnapshot, goToExit, goToStation, onFrame, runtime, setUiHover } from '@/lib/runtime';
 import { force } from '@/scene/force';
 import { cardAnchor } from './cardAnchor';
@@ -60,7 +61,7 @@ export function StationMarkers() {
     const positions: [number, number, boolean][] = Array.from({ length: STATIONS.length + 1 }, () => [0, 0, false]);
     /** Lo último escrito en cada globo: solo se toca el estilo si cambia. */
     const written = Array.from({ length: STATIONS.length + 1 }, () => ({ t: '', visible: false, forced: false, ring: '' }));
-    const compact = window.matchMedia('(max-width: 720px)');
+    const compact = window.matchMedia(COMPACT_QUERY);
     let rect: DOMRect | null = null;
     let lineKey = '';
     let shown = false;

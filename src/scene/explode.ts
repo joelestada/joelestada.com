@@ -9,6 +9,9 @@ import type { StationId } from '@/config/stations';
  * Sin three.js: también lo lee la capa HTML (globos y líneas del despiece).
  */
 
+/** Margen alrededor del volumen de la máquina que pueden ocupar sus piezas separadas (m). */
+export const EXPLODE_REACH = { side: 1.3, up: 1.6 };
+
 /** Separación entre etapas, desfase entre piezas de una etapa y lo que tarda cada pieza (s). */
 const STAGE_GAP = 0.3;
 const STAGGER = 0.07;

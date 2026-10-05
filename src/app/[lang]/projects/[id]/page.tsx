@@ -63,7 +63,7 @@ export default async function ProjectPage({ params }: Props) {
   const s = stationByIdIn(lang)[id];
   const t = uiIn(lang);
   const content = projectIn(id, lang);
-  const bar = { here: { n: s.number, label: s.title.join(' ') }, back: s.id };
+  const bar = { here: { n: s.number, label: s.title.join(' '), short: s.short }, back: s.id };
   const line = { current: s.id, sheet: t.common.sheetOf(s.number, TOTAL), next: true };
   if (content) {
     return (

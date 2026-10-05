@@ -5,7 +5,7 @@ import { END } from '@/config/layout';
 import { useSite } from '@/config/site';
 import { STATIONS, useStations } from '@/config/stations';
 import { useUi } from '@/i18n/ui';
-import { closeMenu, goHome, goToExit, goToStation, onFrame, runtime, setLineOn, setUiHover } from '@/lib/runtime';
+import { closeMenu, goHome, goToExit, goToStation, onFrame, runtime, setLineOn, setUiHover, stepLine } from '@/lib/runtime';
 import { useSnapshot } from './useSnapshot';
 
 /** Paradas del diagrama: las estaciones y, al final, la salida (el contacto). */
@@ -42,7 +42,10 @@ function useTip() {
 
 /** Pie de la lámina: diagrama de la línea con el avance real de la cámara, lema, pausa de la línea y vuelta al inicio. */
 export function LineRail() {
-  const { active, focused, lineOn, atExit } = useSnapshot('active', 'focused', 'lineOn', 'atExit');
+  const { active, focused, lineOn, atExit, intro, selected } = useSnapshot('active', 'focused', 'lineOn', 'atExit', 'intro', 'selected');
+  /** En el móvil, anterior y siguiente flanquean el diagrama (los de la ficha no están). */
+  const atStart = intro && selected === null && !atExit;
+  const atEnd = atExit && selected === null;
   const fills = useRef<(HTMLSpanElement | null)[]>([]);
   const cue = useRef<HTMLDivElement>(null);
   const { line, tip, show, hide, blur } = useTip();
@@ -81,7 +84,8 @@ export function LineRail() {
 
   return (
     <>
-      <div ref={cue} className="cue" aria-hidden>
+      {/* En el móvil la indicación solo acompaña a la presentación (luego taparía la máquina). */}
+      <div ref={cue} className={`cue${atStart ? '' : ' is-off'}`} aria-hidden>
         <span className="cue__desk">{ui.rail.cueDesk}</span>
         {/* En táctil la línea se recorre arrastrando: el dedo hacia la izquierda avanza. */}
         <span className="cue__touch">{ui.rail.cueTouch}</span>
@@ -93,6 +97,11 @@ export function LineRail() {
         </span>
       </div>
       <footer className="rail" data-ui>
+        <button type="button" className="rail-btn rail-btn--step rail-btn--prev" onClick={() => stepLine(-1)} disabled={atStart} aria-label={ui.card.previous}>
+          <svg viewBox="0 0 16 16" aria-hidden>
+            <path d="M10 3.5 L5.5 8 L10 12.5" />
+          </svg>
+        </button>
         <div className="rail__track">
           <div
             className={`rail__tip${tip.on ? ' is-on' : ''}${tip.jump ? ' is-jump' : ''}`}
@@ -170,6 +179,11 @@ export function LineRail() {
             </li>
           </ol>
         </div>
+        <button type="button" className="rail-btn rail-btn--step rail-btn--next" onClick={() => stepLine(1)} disabled={atEnd} aria-label={ui.card.next}>
+          <svg viewBox="0 0 16 16" aria-hidden>
+            <path d="M6 3.5 L10.5 8 L6 12.5" />
+          </svg>
+        </button>
         <div className="rail__motto" aria-hidden>
           {site.motto.map((w) => (
             <span key={w}>{w}</span>
@@ -186,7 +200,7 @@ export function LineRail() {
         </button>
         <button
           type="button"
-          className="rail-btn"
+          className="rail-btn rail-btn--home"
           onClick={() => {
             closeMenu();
             goHome();

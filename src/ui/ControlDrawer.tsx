@@ -405,6 +405,15 @@ export function ControlDrawer() {
     if (e.target === e.currentTarget) setLeaving(null);
   };
 
+  // Con el panel abierto, lo de detrás (ficha, globos, pie) no se alcanza con el tabulador ni con un
+  // lector de pantalla: el foco no se escapa a la fábrica mientras el panel la tapa. La barra sigue.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const behind = Array.from(document.querySelectorAll<HTMLElement>('.pcard, .balloons, .rail'));
+    behind.forEach((el) => (el.inert = true));
+    return () => behind.forEach((el) => (el.inert = false));
+  }, [menuOpen]);
+
   // Foco al contenedor al abrir (no a un enlace: encendería su máquina) y de vuelta al botón al cerrar.
   const wasOpen = useRef(false);
   useEffect(() => {

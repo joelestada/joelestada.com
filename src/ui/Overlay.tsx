@@ -28,6 +28,7 @@ import { StationMarkers } from './StationMarkers';
 import { Toolbar } from './Toolbar';
 import { useUi } from '@/i18n/ui';
 import { useSnapshot } from './useSnapshot';
+import { useViewArea } from './useViewArea';
 
 /** Si la escena tarda en pintar su primer frame, la hoja del cambio de página se retira igual. */
 const ARRIVAL_TIMEOUT = 3000;
@@ -167,6 +168,7 @@ function BootStatus() {
 export function Overlay() {
   useShortcuts();
   useArrival();
+  useViewArea();
   const { flat } = useSnapshot('flat');
   if (flat)
     return (

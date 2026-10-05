@@ -32,9 +32,14 @@
     box-shadow 0.6s var(--ease-out);
 }
 
-.pcard:hover,
 .pcard.is-open {
   border-color: var(--ink);
+}
+
+@media (hover: hover) {
+  .pcard:hover {
+    border-color: var(--ink);
+  }
 }
 
 .pcard.is-open {
@@ -45,6 +50,15 @@
 
 .pcard__sheet {
   padding: 16px var(--card-pad) 18px;
+}
+
+/* Cabecera y título: en el móvil son el botón de la ficha (ver abajo); en escritorio, sin más. */
+.pcard__top {
+  position: relative;
+}
+
+.pcard__toggle {
+  display: none;
 }
 
 /* ---------- Cabecera ---------- */
@@ -271,8 +285,28 @@
   transition: color 0.2s;
 }
 
-.pcard__bom li:hover {
+.pcard__bom li.is-hot {
   color: var(--ink);
+}
+
+@media (hover: hover) {
+  .pcard__bom li:hover {
+    color: var(--ink);
+  }
+}
+
+/* Cada pieza es un botón (tocarla destaca su globo); en escritorio se ve como la fila de siempre. */
+.pcard__bom button {
+  all: unset;
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+  cursor: inherit;
+}
+
+.pcard__bom button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 .pcard__bom b {
@@ -306,9 +340,14 @@
     background-size 0.5s var(--ease-out);
 }
 
-.pcard__mail:hover,
 .pcard__mail:focus-visible {
   background-size: 100% 1px;
+}
+
+@media (hover: hover) {
+  .pcard__mail:hover {
+    background-size: 100% 1px;
+  }
 }
 
 .pcard__mail-arrow {
@@ -316,10 +355,11 @@
   transition: transform 0.45s var(--ease-out);
 }
 
-.pcard__mail:hover .pcard__mail-arrow {
-  transform: translate(2px, -2px);
+@media (hover: hover) {
+  .pcard__mail:hover .pcard__mail-arrow {
+    transform: translate(2px, -2px);
+  }
 }
-
 /* ---------- Las dos acciones del cuerpo ---------- */
 
 .pcard__buttons {
@@ -393,9 +433,14 @@
   transition: transform 0.45s var(--ease-out);
 }
 
-.pcard__explode:hover .pcard__explode-out,
 .pcard__explode:focus-visible .pcard__explode-out {
   transform: scale(1.18);
+}
+
+@media (hover: hover) {
+  .pcard__explode:hover .pcard__explode-out {
+    transform: scale(1.18);
+  }
 }
 
 .pcard__explode.is-on .pcard__explode-out {
@@ -432,10 +477,11 @@
   transition: transform 0.45s var(--ease-out);
 }
 
-.pcard__enter:hover .pcard__arrow {
-  transform: translateX(5px);
+@media (hover: hover) {
+  .pcard__enter:hover .pcard__arrow {
+    transform: translateX(5px);
+  }
 }
-
 /* ---------- Pie: acción, contador, anterior y siguiente ---------- */
 
 .pcard__foot {
@@ -446,9 +492,14 @@
   transition: border-color 0.35s;
 }
 
-.pcard:hover .pcard__foot,
 .pcard.is-open .pcard__foot {
   border-top-color: var(--rule-strong);
+}
+
+@media (hover: hover) {
+  .pcard:hover .pcard__foot {
+    border-top-color: var(--rule-strong);
+  }
 }
 
 .pcard__foot > * + * {
@@ -479,16 +530,17 @@
   transition: transform 0.45s var(--ease-out);
 }
 
-.pcard__action:hover,
-.pcard__step:hover:not(:disabled) {
-  color: var(--paper);
-}
+@media (hover: hover) {
+  .pcard__action:hover,
+  .pcard__step:hover:not(:disabled) {
+    color: var(--paper);
+  }
 
-.pcard__action:hover::before,
-.pcard__step:hover:not(:disabled)::before {
-  transform: none;
+  .pcard__action:hover::before,
+  .pcard__step:hover:not(:disabled)::before {
+    transform: none;
+  }
 }
-
 .pcard__action:focus-visible,
 .pcard__step:focus-visible {
   outline: 2px solid currentColor;
@@ -582,27 +634,30 @@
   width: 1.5px;
 }
 
-.pcard__action:hover .pcard__plus {
-  transform: rotate(90deg);
+@media (hover: hover) {
+  .pcard__action:hover .pcard__plus {
+    transform: rotate(90deg);
+  }
 }
-
 .pcard.is-open .pcard__plus {
   transform: rotate(45deg);
 }
 
-.pcard.is-open .pcard__action:hover .pcard__plus {
-  transform: rotate(135deg);
+@media (hover: hover) {
+  .pcard.is-open .pcard__action:hover .pcard__plus {
+    transform: rotate(135deg);
+  }
 }
-
 /* Presentación: ABOUT abre un apartado del panel, no cierra la ficha (el + no pasa a ×). */
 .pcard.is-intro .pcard__plus {
   transform: none;
 }
 
-.pcard.is-intro .pcard__action:hover .pcard__plus {
-  transform: rotate(90deg);
+@media (hover: hover) {
+  .pcard.is-intro .pcard__action:hover .pcard__plus {
+    transform: rotate(90deg);
+  }
 }
-
 .pcard__action-icon--start {
   flex: none;
   width: 16px;
@@ -613,10 +668,11 @@
   transition: transform 0.45s var(--ease-out);
 }
 
-.pcard__action:hover .pcard__action-icon--start {
-  transform: translateX(-3px);
+@media (hover: hover) {
+  .pcard__action:hover .pcard__action-icon--start {
+    transform: translateX(-3px);
+  }
 }
-
 .pcard__count {
   display: flex;
   align-items: center;
@@ -653,43 +709,68 @@
   transition: transform 0.4s var(--ease-out);
 }
 
-.pcard__step:nth-last-child(2):hover:not(:disabled) svg {
-  transform: translateX(-2px);
-}
+@media (hover: hover) {
+  .pcard__step:nth-last-child(2):hover:not(:disabled) svg {
+    transform: translateX(-2px);
+  }
 
-.pcard__step:last-child:hover:not(:disabled) svg {
-  transform: translateX(2px);
+  .pcard__step:last-child:hover:not(:disabled) svg {
+    transform: translateX(2px);
+  }
 }
-
 .pcard__step:disabled {
   color: var(--ink-3);
   opacity: 0.4;
   cursor: default;
 }
 
-/* ---------- Móvil: a lo ancho, título en una línea, más baja ---------- */
-
-@media (max-width: 720px) {
+/*
+ * ---------- Pantallas compactas: la ficha acoplada (lib/compact.ts) ----------
+ *
+ * En el móvil la ficha deja de flotar: se acopla al pie de la línea, de lado a lado del marco, como el
+ * cajetín de un plano pegado a su margen. Sin el pie de celdas (anterior y siguiente flanquean el
+ * diagrama del pie, que ya dice en qué parada se está): la cabecera entera es el botón de la ficha,
+ * con su celda a la derecha del título. La cámara encuadra la máquina en lo que queda por encima.
+ */
+@media (max-width: 720px), (orientation: landscape) and (max-height: 520px) {
   .pcard {
-    --card-pad: 14px;
-    --foot-h: 44px;
-    left: calc(var(--gutter) + 10px);
-    right: calc(var(--gutter) + 10px);
-    bottom: calc(var(--gutter) + var(--rail-h) + 10px);
+    --card-pad: 16px;
+    left: calc(var(--gutter) + 1px);
+    right: calc(var(--gutter) + 1px);
+    /* Sobre el filete del pie (que es suyo): el pie mide su alto más ese filete. */
+    bottom: calc(var(--frame-b) + var(--rail-h) + 2px);
     width: auto;
+    border-width: 1px 0 0;
+    border-color: var(--rule-strong);
+    box-shadow: 0 -22px 36px -34px color-mix(in srgb, var(--ink) 55%, transparent);
+  }
+  .pcard.is-open {
+    box-shadow: 0 -26px 44px -34px color-mix(in srgb, var(--ink) 70%, transparent);
   }
   .pcard__sheet {
-    padding: 12px var(--card-pad) 13px;
+    padding: 12px var(--card-pad) 14px;
   }
   .pcard__head {
-    margin-bottom: 8px;
+    height: 22px;
+    margin-bottom: 6px;
   }
+  .pcard__badge {
+    width: 22px;
+    height: 22px;
+  }
+  /* Título en una línea si cabe; si no, en sus dos líneas (is-wrap, lo decide ProjectCard). */
   .pcard__title,
   .pcard.is-open .pcard__title {
+    position: relative;
     height: 1.12em;
+    padding-right: 44px;
     font-size: var(--fs-5);
     line-height: 1.12;
     white-space: nowrap;
+  }
+  .pcard__title.is-wrap,
+  .pcard.is-open .pcard__title.is-wrap {
+    height: 2.24em;
   }
   .pcard__lines {
     display: none;
@@ -697,34 +778,200 @@
   .pcard__oneline {
     display: block;
   }
-  .pcard__text {
-    margin-top: 8px;
+  .pcard__title.is-wrap .pcard__lines {
+    display: block;
   }
-  .pcard__desc {
-    display: -webkit-box;
-    overflow: hidden;
-    font-size: var(--fs-2);
-    line-height: 1.45;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-  }
-  .pcard__tip {
+  .pcard__title.is-wrap .pcard__oneline {
     display: none;
   }
+
+  /*
+   * El botón de la ficha. En una máquina, toda la cabecera (tocar el título despliega o recoge); en
+   * la presentación y al final, solo su celda (abre «sobre mí» o vuelve al inicio: no se pulsa sin
+   * querer). La celda es un cuadro con filete, como las de la barra; al pulsar se llena de tinta.
+   */
+  .pcard__toggle {
+    --cell-r: 10px;
+    all: unset;
+    position: absolute;
+    z-index: 1;
+    right: -10px;
+    bottom: -10px;
+    width: 52px;
+    height: 50px;
+    cursor: pointer;
+  }
+  .pcard__toggle.is-wide {
+    --cell-r: var(--card-pad);
+    inset: -12px calc(var(--card-pad) * -1) -10px;
+    width: auto;
+    height: auto;
+  }
+  /* La celda, a la derecha de la última línea del título. */
+  .pcard__toggle-cell {
+    position: absolute;
+    right: var(--cell-r);
+    bottom: 6px;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    box-sizing: border-box;
+    border: 1px solid var(--rule-strong);
+    color: var(--ink);
+    transition:
+      background-color 0.25s,
+      color 0.25s,
+      border-color 0.25s;
+  }
+  .pcard.is-open .pcard__toggle-cell {
+    border-color: var(--ink);
+  }
+  .pcard__toggle:active .pcard__toggle-cell {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .pcard__toggle:focus-visible {
+    outline: none;
+  }
+  .pcard__toggle:focus-visible .pcard__toggle-cell {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+  /* El más gira a cruz con la ficha abierta (como en el pie de escritorio). */
+  .pcard.is-open .pcard__toggle .pcard__plus {
+    transform: rotate(45deg);
+  }
+  .pcard.is-intro .pcard__toggle .pcard__plus {
+    transform: none;
+  }
+
+  .pcard__more {
+    /* Lo que no cabe (una pantalla baja con la ficha abierta) se desplaza dentro de la ficha. */
+    max-height: calc(100dvh - var(--gutter) * 2 - var(--vv-b) - var(--bar-h) - var(--rail-h) - 148px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+  .pcard__text {
+    margin-top: 10px;
+  }
+  /* La descripción entera, a tamaño de lectura (antes se cortaba a tres líneas). */
+  .pcard__desc {
+    font-size: var(--fs-3);
+    line-height: 1.5;
+  }
+  .pcard__tip {
+    margin-top: 10px;
+  }
+  /* Con la máquina despiezada no se puede forzar: el aviso sobra (y la cinta de piezas necesita el sitio). */
+  .pcard.is-exploded .pcard__tip {
+    display: none;
+  }
+  .pcard__buttons {
+    margin-top: 14px;
+    gap: 8px;
+  }
+  .pcard__explode,
+  .pcard__enter,
+  .pcard__buttons .btn {
+    min-height: 46px;
+    padding-block: 6px;
+  }
+  /*
+   * Los rótulos de la fila, algo menos espaciados para que quepan en una línea; si no caben (en
+   * español, en un móvil estrecho), pasan a dos equilibradas y los dos botones crecen a la vez.
+   */
+  .pcard__explode,
+  .pcard__enter {
+    letter-spacing: 0.1em;
+  }
+  .pcard__explode {
+    gap: 8px;
+    padding-inline: 11px;
+  }
+  .pcard__enter {
+    padding-inline: 12px;
+  }
+  .pcard__foot {
+    display: none;
+  }
+
+  /*
+   * Despiece: la lista de piezas es una cinta que se desliza de lado (el dedo sobre ella no mueve la
+   * línea). Tocar una pieza enciende su globo en la escena; tocar un globo enciende su pieza.
+   */
   .pcard__bom {
-    gap: 3px 12px;
+    display: flex;
+    gap: 6px;
+    padding: 1px 24px 1px 1px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+  }
+  .pcard__bom::-webkit-scrollbar {
+    display: none;
+  }
+  .pcard__bom li {
+    flex: none;
+    scroll-snap-align: start;
+  }
+  .pcard__bom button {
+    align-items: center;
+    height: 40px;
+    padding: 0 12px;
+    box-sizing: border-box;
+    border: 1px solid var(--rule-strong);
+    white-space: nowrap;
+    transition:
+      background-color 0.2s,
+      color 0.2s,
+      border-color 0.2s;
+  }
+  .pcard__bom li.is-hot button {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .pcard__bom li.is-hot b {
+    color: inherit;
+  }
+}
+
+/*
+ * Móvil en horizontal: la ficha va a la izquierda, sobre el pie, y crece hacia arriba hasta la barra.
+ * La nave queda a su derecha, entera de alto.
+ */
+@media (orientation: landscape) and (max-height: 520px) {
+  .pcard {
+    right: auto;
+    width: min(340px, 42vw);
+    border-width: 1px 1px 0 0;
+    box-shadow: 18px 0 36px -34px color-mix(in srgb, var(--ink) 55%, transparent);
+  }
+  .pcard.is-open {
+    box-shadow: 22px 0 44px -34px color-mix(in srgb, var(--ink) 70%, transparent);
+  }
+  .pcard__sheet {
+    padding: 10px var(--card-pad) 12px;
+  }
+  .pcard__more {
+    max-height: calc(100dvh - var(--gutter) * 2 - var(--vv-b) - var(--bar-h) - var(--rail-h) - 92px);
+  }
+  .pcard__desc {
+    font-size: var(--fs-2);
   }
   .pcard__buttons {
     margin-top: 10px;
-    gap: 6px;
   }
   .pcard__explode,
-  .pcard__enter {
-    min-height: 40px;
-    padding-block: 6px;
-  }
-  .pcard__foot {
-    grid-template-columns: minmax(0, 1fr) 76px var(--foot-h) var(--foot-h);
+  .pcard__enter,
+  .pcard__buttons .btn {
+    min-height: 44px;
   }
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import type { ProjectFigure, ProjectTest } from '@/config/projects';
 import { useUi } from '@/i18n/ui';
 
@@ -10,12 +10,21 @@ const capital = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
 
 const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+/** Móvil: la pista enseña la captura siguiente asomando y el visor abre la captura entera. */
+const NARROW = '(max-width: 760px)';
+
 /**
  * Las pantallas del producto: pestañas agrupadas (la ficha de un valor primero) y, debajo, una
  * pista con todas las capturas que se pasa deslizando (dedo o trackpad), con flechas y contador.
  * Cada captura va montada: una ventana de la app sobre un passe-partout de papel con cruces de
  * registro. Los globos de la pantalla que los tiene se explican debajo, y cualquier captura se puede
- * ampliar a tamaño real. Teclado en las pestañas: ← → recorren, Inicio y Fin saltan a los extremos.
+ * ampliar (tocándola o con su botón). Teclado en las pestañas: ← → recorren, Inicio y Fin saltan a
+ * los extremos.
+ *
+ * En el móvil las pestañas no caben: arriba van el grupo y el contador; la siguiente captura asoma
+ * por la derecha (se ve que se desliza); debajo, anterior y siguiente a los lados de una barra de
+ * tramos, uno por pantalla, que también lleva a cada una; y el texto de la captura en curso. Los
+ * controles no se mueven al pasar de una a otra: lo que cambia de alto va debajo de ellos.
  */
 export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
   const t = useUi();
@@ -26,47 +35,73 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
   const track = useRef<HTMLDivElement>(null);
   const n = figures.length;
 
+  /** Posición de la pista que centra la captura k (en escritorio ocupan la pista entera). */
+  const leftOf = (k: number) => {
+    const tr = track.current;
+    const slide = tr?.children[k] as HTMLElement | undefined;
+    if (!tr || !slide) return 0;
+    return slide.offsetLeft - (tr.clientWidth - slide.offsetWidth) / 2;
+  };
+
   /** Lleva la pista a la captura k (sin tocar el scroll vertical de la página). */
   const show = (k: number, focus = false) => {
     const next = (k + n) % n;
+    // A la de al lado se desliza; más lejos, se salta directamente (no pasan todas por delante).
+    const far = Math.abs(next - i) > 1;
     setI(next);
-    const t = track.current;
-    if (t) t.scrollTo({ left: next * t.clientWidth, behavior: reduced() ? 'auto' : 'smooth' });
+    track.current?.scrollTo({ left: leftOf(next), behavior: reduced() || far ? 'auto' : 'smooth' });
     if (focus) tabs.current[next]?.focus({ preventScroll: true });
   };
 
-  // Al deslizar, la pestaña sigue a la captura que queda encajada.
+  // Al deslizar, la pestaña sigue a la captura que queda encajada (la más cercana al centro).
   useEffect(() => {
-    const t = track.current;
-    if (!t) return;
+    const tr = track.current;
+    if (!tr) return;
     let raf = 0;
     const onScroll = () => {
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
-        setI(Math.round(t.scrollLeft / Math.max(1, t.clientWidth)));
+        const mid = tr.scrollLeft + tr.clientWidth / 2;
+        let best = 0;
+        let dist = Infinity;
+        Array.from(tr.children).forEach((c, k) => {
+          const el = c as HTMLElement;
+          const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid);
+          if (d < dist) {
+            dist = d;
+            best = k;
+          }
+        });
+        setI(best);
       });
     };
-    t.addEventListener('scroll', onScroll, { passive: true });
+    tr.addEventListener('scroll', onScroll, { passive: true });
     return () => {
-      t.removeEventListener('scroll', onScroll);
+      tr.removeEventListener('scroll', onScroll);
       cancelAnimationFrame(raf);
     };
   }, []);
 
   // La pista toma la altura de la captura actual (no la de la más alta): sin hueco bajo las que no
-  // llevan notas. Se vuelve a medir si cambia el ancho (la captura cambia de alto con él).
+  // llevan notas. Se vuelve a medir si cambia el ancho (la captura cambia de alto con él). En el
+  // móvil las notas van fuera de la pista: su alto es el de la ventana más alta y no se mueve.
   useEffect(() => {
-    const t = track.current;
-    const slide = t?.children[i] as HTMLElement | undefined;
-    if (!t || !slide) return;
+    const tr = track.current;
+    const slide = tr?.children[i] as HTMLElement | undefined;
+    if (!tr || !slide) return;
+    const narrow = window.matchMedia(NARROW);
     const fit = () => {
-      t.style.height = `${slide.offsetHeight}px`;
+      tr.style.height = narrow.matches ? '' : `${slide.offsetHeight}px`;
     };
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(slide);
-    return () => ro.disconnect();
+    narrow.addEventListener('change', fit);
+    return () => {
+      ro.disconnect();
+      narrow.removeEventListener('change', fit);
+    };
   }, [i]);
 
   // La pestaña activa se centra en su tira (en móvil no caben todas).
@@ -98,6 +133,7 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
     e.preventDefault();
   };
   const f = figures[i];
+  const firstOf = (k: number) => k === 0 || figures[k - 1].group !== figures[k].group;
 
   return (
     <div className="pj-tour" id="pj-tour">
@@ -114,7 +150,7 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
             aria-selected={k === i}
             aria-controls={`pj-screen-${k}`}
             tabIndex={k === i ? 0 : -1}
-            className={k === 0 || figures[k - 1].group !== x.group ? 'is-first' : undefined}
+            className={firstOf(k) ? 'is-first' : undefined}
             data-group={x.group}
             onClick={() => show(k)}
           >
@@ -123,6 +159,16 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
         ))}
       </div>
 
+      {/* Móvil: el grupo y la pantalla en curso, con el contador. */}
+      <p className="pj-tour__head" aria-live="polite">
+        <span>
+          {f.group} <b>— {f.label}</b>
+        </span>
+        <em>
+          {pad(i + 1)} / {pad(n)}
+        </em>
+      </p>
+
       <div className="pj-mount">
         <i className="pj-cross pj-cross--tl" aria-hidden />
         <i className="pj-cross pj-cross--tr" aria-hidden />
@@ -130,26 +176,35 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
         <i className="pj-cross pj-cross--br" aria-hidden />
         <div ref={track} className="pj-tour__track">
           {figures.map((x, k) => (
-            <figure key={x.src} className="pj-slide" id={`pj-screen-${k}`} role="tabpanel" aria-labelledby={`pj-tab-${k}`} inert={k !== i}>
-              <Window f={x} eager={k === 0} onZoom={() => setZoom(k)} />
-              <figcaption className="pj-mount__caption">{x.caption}</figcaption>
-              {x.notes && (
-                <ol className="pj-notes">
-                  {x.notes.map((note, m) => (
-                    <li key={note.text}>
-                      <b>{m + 1}</b>
-                      {note.text}
-                    </li>
-                  ))}
-                </ol>
-              )}
-            </figure>
+            // El panel de la pestaña envuelve a la figura (una figura no puede hacer de panel).
+            <div key={x.src} className="pj-slide" id={`pj-screen-${k}`} role="tabpanel" aria-labelledby={`pj-tab-${k}`} inert={k !== i}>
+              <figure>
+                <Window f={x} eager={k === 0} onZoom={() => setZoom(k)} />
+                <figcaption className="pj-mount__caption">{x.caption}</figcaption>
+                {x.notes && <Notes f={x} />}
+              </figure>
+            </div>
           ))}
         </div>
         <div className="pj-tour__nav">
           <button type="button" className="pj-tour__step" onClick={() => show(i - 1)} aria-label={t.project.prevScreen}>
             <span aria-hidden>←</span>
           </button>
+          {/* Móvil: un tramo por pantalla, agrupados como las pestañas; el tramo lleva a su pantalla. */}
+          <div className="pj-tour__bar">
+            {figures.map((x, k) => (
+              <button
+                key={x.src}
+                type="button"
+                className={`${firstOf(k) && k > 0 ? 'is-first' : ''}${k === i ? ' is-on' : ''}`}
+                aria-label={`${t.project.goToScreen} ${k + 1}: ${x.group} — ${x.label}`}
+                aria-current={k === i ? 'true' : undefined}
+                onClick={() => show(k)}
+              >
+                <i aria-hidden />
+              </button>
+            ))}
+          </div>
           <p className="pj-tour__where" aria-live="polite">
             <b>
               {pad(i + 1)} / {pad(n)}
@@ -164,12 +219,43 @@ export function ProjectTour({ figures }: { figures: ProjectFigure[] }) {
         </div>
       </div>
 
-      {zoom !== null && <Zoom f={figures[zoom]} onClose={() => setZoom(null)} />}
+      {/* Móvil: el texto de la captura en curso, fuera de la pista (lo que cambia de alto va abajo). */}
+      <div className="pj-tour__info">
+        <p key={f.src} className="pj-mount__caption">
+          {f.caption}
+        </p>
+        {f.notes && <Notes key={`${f.src}-notes`} f={f} />}
+      </div>
+
+      {zoom !== null && (
+        <Zoom
+          figures={figures}
+          start={zoom}
+          onClose={(k) => {
+            setZoom(null);
+            if (k !== i) show(k);
+          }}
+        />
+      )}
     </div>
   );
 }
 
-/** Ventana de la app: barra de título en tinta, botón de ampliar y la captura con sus globos. */
+/** Notas de los globos de una captura. */
+function Notes({ f }: { f: ProjectFigure }) {
+  return (
+    <ol className="pj-notes">
+      {f.notes?.map((note, m) => (
+        <li key={note.text}>
+          <b>{m + 1}</b>
+          {note.text}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+/** Ventana de la app: barra de título en tinta, botón de ampliar y la captura con sus globos (tocarla también amplía). */
 function Window({ f, eager, onZoom }: { f: ProjectFigure; eager: boolean; onZoom: () => void }) {
   const t = useUi();
   return (
@@ -189,7 +275,7 @@ function Window({ f, eager, onZoom }: { f: ProjectFigure; eager: boolean; onZoom
           </svg>
         </button>
       </div>
-      <div className="pj-win__screen" style={{ aspectRatio: `${f.w} / ${f.h}` } as CSSProperties}>
+      <div className="pj-win__screen" style={{ aspectRatio: `${f.w} / ${f.h}` } as CSSProperties} onClick={onZoom}>
         <img src={f.src} width={f.w} height={f.h} alt={f.alt} loading={eager ? undefined : 'lazy'} decoding="async" />
         {f.notes && (
           <div className="pj-callouts" aria-hidden>
@@ -214,13 +300,28 @@ function Window({ f, eager, onZoom }: { f: ProjectFigure; eager: boolean; onZoom
   );
 }
 
+/** Desplazamiento mínimo (px) para que un arrastre en el visor sea pasar de captura y no un toque. */
+const SWIPE = 48;
+
 /**
- * Captura a tamaño de lectura, a pantalla completa (un <dialog> modal: Esc o el botón cierran).
- * En el móvil se desplaza en las dos direcciones para leer la interfaz sin pellizcar.
+ * Visor de capturas a pantalla completa (un <dialog> modal: Esc o el botón cierran). Abre la captura
+ * entera en el móvil (a tamaño de lectura en escritorio); tocarla pasa de una vista a la otra, y de
+ * cerca se desplaza en las dos direcciones para leer la interfaz sin pellizcar. Anterior y siguiente
+ * al pie (y deslizando la captura entera, o con ← →); al cerrar, la pista queda en la última vista.
  */
-function Zoom({ f, onClose }: { f: ProjectFigure; onClose: () => void }) {
+function Zoom({ figures, start, onClose }: { figures: ProjectFigure[]; start: number; onClose: (k: number) => void }) {
   const t = useUi();
   const ref = useRef<HTMLDialogElement>(null);
+  const stage = useRef<HTMLDivElement>(null);
+  const n = figures.length;
+  const [k, setK] = useState(start);
+  const [read, setRead] = useState(() => !window.matchMedia(NARROW).matches);
+  const at = useRef(k);
+  at.current = k;
+  const down = useRef<{ x: number; y: number } | null>(null);
+  const aim = useRef<{ fx: number; fy: number } | null>(null);
+  const f = figures[k];
+
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
@@ -232,16 +333,94 @@ function Zoom({ f, onClose }: { f: ProjectFigure; onClose: () => void }) {
       if (d.open) d.close();
     };
   }, []);
+
+  // De lejos a cerca: el punto tocado queda en el centro de la vista.
+  useLayoutEffect(() => {
+    const el = stage.current;
+    const p = aim.current;
+    aim.current = null;
+    if (!el || !read || !p) return;
+    el.scrollLeft = p.fx * el.scrollWidth - el.clientWidth / 2;
+    el.scrollTop = p.fy * el.scrollHeight - el.clientHeight / 2;
+  }, [read]);
+
+  // Otra captura: se vuelve a ver como al abrir (entera en el móvil), desde arriba.
+  const go = (d: number) => {
+    setK((x) => (x + d + n) % n);
+    setRead(!window.matchMedia(NARROW).matches);
+    stage.current?.scrollTo(0, 0);
+  };
+
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'ArrowRight') go(1);
+    else if (e.key === 'ArrowLeft') go(-1);
+    else return;
+    e.preventDefault();
+  };
+
   return (
-    <dialog ref={ref} className="pj-zoom" aria-label={f.title} onClose={onClose} onCancel={onClose}>
+    <dialog
+      ref={ref}
+      className={`pj-zoom${read ? ' is-read' : ''}`}
+      aria-label={f.title}
+      // Solo un cierre de verdad (Esc o el botón): el «close» que deja en cola un desmontaje y vuelta a
+      // montar (modo estricto) llega con el diálogo ya abierto otra vez.
+      onClose={() => {
+        if (!ref.current?.open) onClose(at.current);
+      }}
+      onKeyDown={onKey}
+    >
       <div className="pj-zoom__bar">
         <span>Ottometrix — {f.title}</span>
-        <button type="button" onClick={onClose} autoFocus>
+        <b>
+          {pad(k + 1)} / {pad(n)}
+        </b>
+        <button type="button" onClick={() => onClose(at.current)} autoFocus>
           {t.common.close} <span aria-hidden>×</span>
         </button>
       </div>
-      <div className="pj-zoom__scroll">
-        <img src={f.src} width={f.w} height={f.h} alt={f.alt} />
+      <div
+        ref={stage}
+        className="pj-zoom__scroll"
+        onPointerDown={(e) => {
+          down.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerUp={(e) => {
+          const s = down.current;
+          down.current = null;
+          // Con la captura entera, arrastrar de lado pasa a la siguiente o a la anterior.
+          if (!s || read || e.pointerType === 'mouse') return;
+          const dx = e.clientX - s.x;
+          if (Math.abs(dx) > SWIPE && Math.abs(dx) > Math.abs(e.clientY - s.y) * 1.5) {
+            down.current = { x: NaN, y: NaN };
+            go(dx < 0 ? 1 : -1);
+          }
+        }}
+        onClick={(e) => {
+          if (down.current && Number.isNaN(down.current.x)) {
+            down.current = null;
+            return;
+          }
+          const img = (e.currentTarget as HTMLElement).querySelector('img');
+          if (!img) return;
+          const r = img.getBoundingClientRect();
+          aim.current = { fx: Math.min(1, Math.max(0, (e.clientX - r.left) / r.width)), fy: Math.min(1, Math.max(0, (e.clientY - r.top) / r.height)) };
+          setRead((v) => !v);
+        }}
+      >
+        <img key={f.src} src={f.src} width={f.w} height={f.h} alt={f.alt} />
+        <span className="pj-zoom__hint" aria-hidden>
+          {read ? t.project.zoomOut : t.project.zoomIn}
+        </span>
+      </div>
+      <div className="pj-zoom__foot">
+        <button type="button" onClick={() => go(-1)} aria-label={t.project.prevScreen}>
+          <span aria-hidden>←</span>
+        </button>
+        <p>{f.caption}</p>
+        <button type="button" onClick={() => go(1)} aria-label={t.project.nextScreen}>
+          <span aria-hidden>→</span>
+        </button>
       </div>
     </dialog>
   );

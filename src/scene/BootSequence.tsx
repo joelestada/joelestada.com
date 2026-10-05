@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { BUILDING } from '@/config/layout';
 import { pageLang } from '@/i18n/lang';
 import { uiIn } from '@/i18n/ui';
-import { markFull, runtime } from '@/lib/runtime';
+import { markFull, resumeScroll, runtime } from '@/lib/runtime';
 import { BOOT, RISE, boot, bootHeld, hurryBoot, startBoot, stepBoot } from './boot';
 import { frameClock } from './frameClock';
 
@@ -160,7 +160,7 @@ export function BootSequence() {
       revealUi();
     }
     if (ended) {
-      runtime.lenis?.start();
+      resumeScroll();
       markFull();
     }
     invalidate();
