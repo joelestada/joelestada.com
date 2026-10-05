@@ -414,15 +414,49 @@ export function ControlDrawer() {
     return () => behind.forEach((el) => (el.inert = false));
   }, [menuOpen]);
 
-  // Foco al contenedor al abrir (no a un enlace: encendería su máquina) y de vuelta al botón al cerrar.
+  // Foco al contenedor al abrir (no a un enlace: encendería su máquina) y, al cerrar, de vuelta a lo
+  // que lo abrió (el botón del menú o una pestaña de la barra). Si el foco ya está en otro sitio (se
+  // cerró con una pestaña de la barra), se queda allí.
+  const opener = useRef<HTMLElement | null>(null);
   const wasOpen = useRef(false);
   useEffect(() => {
     if (menuOpen) {
+      const from = document.activeElement;
+      opener.current = from instanceof HTMLElement && from.closest('.bar') ? from : null;
       const t = window.setTimeout(() => sheet.current?.focus({ preventScroll: true }), UNROLL_MS * 0.7);
       wasOpen.current = true;
       return () => window.clearTimeout(t);
     }
-    if (wasOpen.current) document.getElementById('menu-toggle')?.focus({ preventScroll: true });
+    if (!wasOpen.current) return;
+    const at = document.activeElement;
+    if (at && at !== document.body && !at.closest('#drawer')) return;
+    const back = opener.current?.isConnected && opener.current.offsetParent ? opener.current : document.getElementById('menu-toggle');
+    back?.focus({ preventScroll: true });
+  }, [menuOpen]);
+
+  // Con el panel abierto, el tabulador da la vuelta entre la barra (sus pestañas cambian de apartado
+  // y el botón lo cierra) y el panel: no se sale al resto de la página ni al navegador.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const FOCUSABLE = 'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const all = Array.from(document.querySelectorAll<HTMLElement>(`.bar :is(${FOCUSABLE}), #drawer :is(${FOCUSABLE})`)).filter(
+        (el) => !el.closest('[inert]') && el.offsetParent !== null,
+      );
+      if (!all.length) return;
+      const at = document.activeElement;
+      const k = all.indexOf(at as HTMLElement);
+      // En el contenedor del panel (recibe el foco al abrir), el orden natural sigue hacia dentro.
+      if (k < 0 && at?.closest('#drawer, .bar')) return;
+      const drawerFirst = all.find((el) => el.closest('#drawer'));
+      const next = k < 0 ? (drawerFirst ?? all[0]) : e.shiftKey ? (k === 0 ? all[all.length - 1] : null) : k === all.length - 1 ? all[0] : null;
+      if (!next) return;
+      e.preventDefault();
+      next.focus();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, [menuOpen]);
 
   return (

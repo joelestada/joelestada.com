@@ -12,6 +12,10 @@ const R = 10;
 const REACH = 30;
 /** Separación mínima entre globos (px): se apartan unos de otros si se pisan. */
 const GAP = 2 * R + 5;
+/** Margen del globo con el borde de la pantalla y con la interfaz (px). */
+const EDGE = R + 4;
+/** Lo que tapa la escena: un globo debajo no se lee ni se puede tocar. */
+const WALLS = ['.bar', '.pcard', '.rail'];
 
 let layer: SVGSVGElement | null = null;
 /** Pieza destacada: la del globo tocado o la de la lista de piezas de la ficha (0, ninguna). */
@@ -96,6 +100,31 @@ export function ExplodeCallouts() {
         if (!e.spec.tag) [tx, ty] = len < 1 ? [-REACH * 0.7, -REACH * 0.7] : [(tx / len) * REACH, (ty / len) * REACH];
         return { e, px, py, bx: px + tx, by: py + ty };
       });
+      // Dentro de la pantalla y fuera de la barra, la ficha y el pie: el globo que cae encima sale por
+      // el lado más corto (en el móvil, a 320 px o en horizontal, varios quedaban cortados o tapados).
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      const walls = WALLS.map((q) => document.querySelector(q)?.getBoundingClientRect()).filter((r): r is DOMRect => !!r && r.width > 0);
+      const onScreen = (x: number, y: number) => x >= EDGE && x <= W - EDGE && y >= EDGE && y <= H - EDGE;
+      const keep = (sp: { bx: number; by: number }) => {
+        for (const o of walls) {
+          const [l, r, t, b] = [o.left - EDGE, o.right + EDGE, o.top - EDGE, o.bottom + EDGE];
+          if (sp.bx <= l || sp.bx >= r || sp.by <= t || sp.by >= b) continue;
+          const out = (
+            [
+              [l, sp.by],
+              [r, sp.by],
+              [sp.bx, t],
+              [sp.bx, b],
+            ] as const
+          ).filter(([x, y]) => onScreen(x, y));
+          if (!out.length) continue;
+          const [x, y] = out.reduce((m, c) => (Math.hypot(c[0] - sp.bx, c[1] - sp.by) < Math.hypot(m[0] - sp.bx, m[1] - sp.by) ? c : m));
+          [sp.bx, sp.by] = [x, y];
+        }
+        sp.bx = Math.min(W - EDGE, Math.max(EDGE, sp.bx));
+        sp.by = Math.min(H - EDGE, Math.max(EDGE, sp.by));
+      };
       for (let it = 0; it < 8; it++) {
         for (let i = 0; i < spots.length; i++) {
           for (let j = i + 1; j < spots.length; j++) {
@@ -114,6 +143,7 @@ export function ExplodeCallouts() {
             b.by += (dy / d) * push;
           }
         }
+        for (const sp of spots) if (sp) keep(sp);
       }
       groups.forEach((g, i) => {
         const spot = spots[i];
